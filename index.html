@@ -70,6 +70,27 @@
     .ios-guide strong { display:block; margin-bottom:3px; color:#fff; font-size:13px; }
     .ios-guide a { color:#9ed9ff; text-decoration:underline; text-underline-offset:2px; }
     .pad,.grip-buttons button { -webkit-touch-callout:none; }
+
+    .help-link { display:inline-flex;align-items:center;gap:6px;margin-top:11px;border:1px solid #405b84;border-radius:11px;background:#20344f;color:#d8e7ff;padding:9px 12px;font-size:12px;font-weight:750; }
+    .help-link:hover { background:#2a4265; }
+    .help-overlay[hidden] { display:none !important; }
+    .help-overlay { position:fixed;inset:0;z-index:500;display:grid;place-items:center;padding:16px;background:#030916dc;backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px); }
+    .help-dialog { position:relative;width:min(100%,440px);max-height:min(90dvh,750px);overflow-y:auto;overscroll-behavior:contain;background:linear-gradient(145deg,#1b2d48,#101827);border:1px solid #435c83;border-radius:24px;padding:24px 20px calc(20px + env(safe-area-inset-bottom));box-shadow:0 20px 70px #000b; }
+    .help-close-x { position:absolute;right:14px;top:13px;display:grid;place-items:center;width:36px;height:36px;background:#273953;color:#fff;border:1px solid #526584;border-radius:10px;font-size:23px;line-height:1; }
+    .help-badge { display:inline-flex;align-items:center;gap:5px;background:#243b65;color:#bcd3ff;border:1px solid #405c8b;padding:6px 11px;border-radius:50px;font-size:11px;letter-spacing:.8px;font-weight:800; }
+    .help-dialog h2 { margin:14px 45px 8px 0;font-size:27px;line-height:1.13;letter-spacing:-.8px; }
+    .help-desc { margin:0 0 15px;font-size:13px;line-height:1.55;color:#bdcce2; }
+    .help-steps { list-style:none;counter-reset:step;margin:15px 0;padding:0;display:grid;gap:10px; }
+    .help-steps li { position:relative;padding:12px 12px 12px 48px;border:1px solid #344a68;border-radius:13px;background:#14243a;font-size:13px;line-height:1.45;color:#dce8fa; }
+    .help-steps li::before { counter-increment:step;content:counter(step);position:absolute;left:12px;top:11px;width:24px;height:24px;display:grid;place-items:center;border-radius:8px;background:#7f9ffe;color:#081328;font-weight:850; }
+    .help-dialog a.help-store { display:flex;justify-content:center;align-items:center;min-height:49px;background:#86a4ff;color:#091329;border-radius:12px;text-decoration:none;font-weight:800;text-align:center;font-size:13px;padding:10px; }
+    .help-done { width:100%;margin-top:9px;min-height:46px;border-radius:12px;border:1px solid #465b7b;background:#253954;color:#f8fbff;font-weight:800; }
+    .help-again { display:flex;align-items:center;gap:8px;margin-top:13px;color:#adbed6;font-size:12px; }
+    .help-again input { accent-color:#86a4ff;width:17px;height:17px; }
+    .help-fallback { margin-top:14px;font-size:12px;line-height:1.5;color:#afc1dd; }
+    .help-fallback a { color:#adcbff; }
+    body.iphone-help-open { overflow:hidden; }
+    @media(max-width:380px) { .help-dialog { padding:20px 15px; } .help-dialog h2 { font-size:24px; } }
     .footer { font-size:11px; line-height:1.5; color:#8192ad; margin:18px 5px 0; text-align:center; }
     .snackbar { position:fixed; z-index:99; left:50%; transform:translate(-50%,12px); bottom:calc(18px + env(safe-area-inset-bottom)); background:#20314e; border:1px solid #5976a9; border-radius:12px; box-shadow:0 14px 40px #000a; padding:13px 16px; min-width:180px; max-width:calc(100vw - 26px); color:#f7faff; font-size:13px; opacity:0; pointer-events:none; transition:opacity .16s,transform .16s; }
     .snackbar.visible { opacity:1; transform:translate(-50%,0); }
@@ -85,7 +106,7 @@
   </header>
   <div class="heading">
     <div><h2>Controle na<br>palma da mão.</h2><p>Micro:bit + Robotbit • 4 servos • Bluetooth BLE</p></div>
-    <span class="version">V2.2</span>
+    <span class="version">V2.3</span>
   </div>
 
   <section class="panel" aria-label="Conexão">
@@ -98,6 +119,7 @@
       <button type="button" id="disconnect" class="btn secondary" disabled>Sair</button>
     </div>
     <p id="device" class="device">A conexão não movimenta os motores. Habilite o controle antes de usar.</p>
+    <button id="iphoneHelpButton" type="button" class="help-link" aria-haspopup="dialog">ⓘ Como conectar no iPhone</button>
   </section>
 
   <section class="panel" aria-label="Movimentos">
@@ -131,6 +153,25 @@
   </section>
   <p class="footer">Parada por software: bloqueia novos comandos, mas não corta a alimentação ou o torque dos servos. Não é um dispositivo de segurança certificado.</p>
 </main>
+
+<div class="help-overlay" id="iphoneHelpOverlay" hidden>
+  <section class="help-dialog" role="dialog" aria-modal="true" aria-labelledby="iphoneHelpTitle" aria-describedby="iphoneHelpDesc" tabindex="-1">
+    <button type="button" id="iphoneHelpX" class="help-close-x" aria-label="Fechar ajuda">×</button>
+    <span class="help-badge"> IPHONE · SAFARI</span>
+    <h2 id="iphoneHelpTitle">Vamos conectar sua garra?</h2>
+    <p id="iphoneHelpDesc" class="help-desc">O Safari do iPhone não oferece Web Bluetooth nativamente. Para conectar à micro:bit sem sair do Safari, ative uma extensão que adiciona essa função.</p>
+    <ol class="help-steps" id="iphoneHelpSteps">
+      <li>Instale o <strong>beacio</strong> pela App Store. O aplicativo exige uma versão compatível do iOS (26.2 ou posterior).</li>
+      <li>No iPhone, acesse <strong>Ajustes → Apps → Safari → Extensões</strong> e ative <strong>beacio</strong>.</li>
+      <li>Autorize a extensão neste site. Volte ao Safari e recarregue a página.</li>
+      <li>Toque em <strong>Conectar ao micro:bit</strong>, selecione a placa e depois em <strong>Habilitar controle</strong>.</li>
+    </ol>
+    <a class="help-store" id="iphoneHelpStore" href="https://apps.apple.com/br/app/beacio/id6761301368" target="_blank" rel="noopener noreferrer">Instalar beacio na App Store</a>
+    <button class="help-done" id="iphoneHelpDone" type="button">Entendi · Voltar ao controle</button>
+    <label class="help-again"><input id="iphoneHelpDontShow" type="checkbox"> Não abrir esta ajuda automaticamente de novo</label>
+    <p class="help-fallback">Não consegue ativar a extensão? Abra este mesmo site no <a href="https://apps.apple.com/br/app/bluefy-web-ble-browser/id1492822055" target="_blank" rel="noopener noreferrer">Bluefy</a> como alternativa. A conexão BLE depende do firmware Bluetooth UART instalado na micro:bit.</p>
+  </section>
+</div>
 <div id="toast" class="snackbar" role="status" aria-live="polite"></div>
 <script>
 (() => {
@@ -145,6 +186,51 @@
     if (!navigator.bluetooth) document.documentElement.classList.add('needs-ble-extension');
   }
   const ui = { status:$('status'), statusText:$('statusText'), connect:$('connect'), enable:$('enable'), disconnect:$('disconnect'), device:$('device'), leftX:$('leftX'),leftY:$('leftY'),rightX:$('rightX'),rightY:$('rightY'), speed:$('speed'),speedValue:$('speedValue'), leftPad:$('leftPad'),rightPad:$('rightPad'),leftNub:$('leftNub'),rightNub:$('rightNub'), openGrip:$('openGrip'),closeGrip:$('closeGrip'),stop:$('estop'),toast:$('toast') };
+
+  const helpOverlay=$('iphoneHelpOverlay'), helpButton=$('iphoneHelpButton'),helpDialog=helpOverlay.querySelector('.help-dialog');
+  const helpDone=$('iphoneHelpDone'),helpX=$('iphoneHelpX'),helpDontShow=$('iphoneHelpDontShow');
+  const helpSteps=$('iphoneHelpSteps'),helpStore=$('iphoneHelpStore'),helpDesc=$('iphoneHelpDesc');
+  const seenKey='robotbit_iphone_help_v23';
+  let helpReturnFocus=null;
+  function savedHelpChoice(){try{return localStorage.getItem(seenKey)==='1';}catch(e){return false;}}
+  function saveHelpChoice(){try{localStorage.setItem(seenKey,'1');}catch(e){}}
+  function showIphoneHelp(){
+    if(!helpOverlay.hidden)return;
+    helpReturnFocus=document.activeElement;
+    const bluetoothReady=!!(navigator.bluetooth && typeof navigator.bluetooth.requestDevice==='function');
+    if(bluetoothReady){
+      helpDesc.textContent='Este navegador já disponibiliza Web Bluetooth. Confirme que a micro:bit está ligada com o firmware UART, depois conecte e habilite o controle.';
+      helpSteps.innerHTML='<li>Ligue a micro:bit com o receptor Bluetooth UART.</li><li>Toque em <strong>Conectar ao micro:bit</strong> e escolha a placa.</li><li>Toque em <strong>Habilitar controle</strong>.</li><li>Comece com velocidade 1 e teste movimentos pequenos.</li>';
+      helpStore.hidden=true;
+    }else{
+      helpDesc.textContent='O Safari do iPhone não oferece Web Bluetooth nativamente. Para conectar à micro:bit sem sair do Safari, ative uma extensão que adiciona essa função.';
+      helpSteps.innerHTML='<li>Instale o <strong>beacio</strong> pela App Store (iOS 26.2 ou posterior).</li><li>Abra <strong>Ajustes → Apps → Safari → Extensões</strong> e ative beacio.</li><li>Autorize a extensão neste site, volte ao Safari e recarregue a página.</li><li>Toque em <strong>Conectar ao micro:bit</strong>, escolha a placa e depois <strong>Habilitar controle</strong>.</li>';
+      helpStore.hidden=false;
+    }
+    helpOverlay.hidden=false;
+    document.body.classList.add('iphone-help-open');
+    helpX.focus();
+  }
+  function hideIphoneHelp(){
+    if(helpOverlay.hidden)return;
+    if(helpDontShow.checked)saveHelpChoice();
+    helpOverlay.hidden=true;
+    document.body.classList.remove('iphone-help-open');
+    if(helpReturnFocus && helpReturnFocus.isConnected)helpReturnFocus.focus();
+  }
+  helpButton.addEventListener('click',showIphoneHelp);
+  helpDone.addEventListener('click',hideIphoneHelp);
+  helpX.addEventListener('click',hideIphoneHelp);
+  helpOverlay.addEventListener('click',ev=>{if(ev.target===helpOverlay)hideIphoneHelp();});
+  helpOverlay.addEventListener('keydown',ev=>{
+    if(ev.key==='Escape'){ev.preventDefault();hideIphoneHelp();return;}
+    if(ev.key==='Tab'){
+      const nodes=Array.from(helpDialog.querySelectorAll('a[href],button:not([disabled]),input:not([disabled])')).filter(el=>!el.hidden && el.getClientRects().length);
+      if(!nodes.length)return;
+      if(ev.shiftKey && document.activeElement===nodes[0]){ev.preventDefault();nodes[nodes.length-1].focus();}
+      else if(!ev.shiftKey && document.activeElement===nodes[nodes.length-1]){ev.preventDefault();nodes[0].focus();}
+    }
+  });
   const textEncoder = new TextEncoder();
   let bleDevice = null, bleWrite = null, connected = false, armed = false;
   let writeChain = Promise.resolve(), tickTimer = null, toastTimeout = null, sendingMove = false;
@@ -213,7 +299,7 @@
     if(!window.isSecureContext){ui.device.textContent='Abra o site por HTTPS (GitHub Pages).';toast('Conexão Bluetooth exige HTTPS.');return;}
     if(!navigator.bluetooth || typeof navigator.bluetooth.requestDevice !== 'function'){
       ui.device.textContent=isIOS?'No Safari, ative a extensão beacio (iOS 26.2+) e recarregue. Alternativa: Bluefy.':'Este navegador não oferece Web Bluetooth. No Android, use o Chrome.';
-      toast(isIOS?'Safari precisa de extensão Bluetooth. Veja as instruções acima.':'Seu navegador não suporta Bluetooth Web.');return;
+      toast(isIOS?'Safari precisa de extensão Bluetooth. Veja as instruções acima.':'Seu navegador não suporta Bluetooth Web.');if(isIOS)showIphoneHelp();return;
     }
     ui.connect.disabled=true;ui.device.textContent='Procurando micro:bit por Bluetooth...';
     try {
@@ -290,6 +376,7 @@
   if (isIOS && !navigator.bluetooth) ui.device.textContent='Safari sem Web Bluetooth: ative a extensão beacio ou abra pelo Bluefy.';
   if (isIOS && navigator.bluetooth) ui.device.textContent='Bluetooth disponível no iPhone. Toque em Conectar ao micro:bit.';
   render();
+  if (isIOS && !savedHelpChoice()) showIphoneHelp();
 })();
 </script>
 </body>
