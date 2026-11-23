@@ -228,6 +228,183 @@ body.dual-control .dual-badge{background:#103f35;border-color:#52bca5;color:#9ff
   .game-mode.landscape-auto .grip-label{display:none}
   .game-mode.landscape-auto .zone-head .dual-badge{display:none}
 }
+
+/* V4.2 — refined thumb-first landscape controller */
+.landscape-dock,.landscape-console-head,.landscape-console-foot{display:none}
+body.game-mode.landscape-auto{background:#080d18;overscroll-behavior:none}
+body.game-mode.landscape-auto .page{
+  height:100dvh;min-height:100dvh;width:100%;max-width:none;
+  padding:max(6px,env(safe-area-inset-top)) max(11px,env(safe-area-inset-right))
+    max(7px,env(safe-area-inset-bottom)) max(11px,env(safe-area-inset-left));
+  display:flex;flex-direction:column;gap:7px;overflow:hidden;
+}
+body.game-mode.landscape-auto .topbar{
+  display:flex;align-items:center;flex:0 0 auto;min-width:0;
+  min-height:37px;margin:0;gap:10px;
+}
+body.game-mode.landscape-auto .brandlock{gap:7px;flex:0 0 auto}
+body.game-mode.landscape-auto .brand-mark{width:32px;height:32px;border-radius:10px}
+body.game-mode.landscape-auto .brand-mark svg{width:22px;height:22px}
+body.game-mode.landscape-auto .brand-name{font-size:13px;letter-spacing:-.45px;white-space:nowrap}
+body.game-mode.landscape-auto .brand-sub{display:none}
+body.game-mode.landscape-auto .landscape-dock{display:flex;align-items:center;flex:1;min-width:0}
+body.game-mode.landscape-auto .connect-panel{display:none}
+body.game-mode.landscape-auto .landscape-dock .connect-actions{
+  display:flex;align-items:center;gap:6px;margin:0;width:100%;min-width:0;
+}
+body.game-mode.landscape-auto .landscape-dock .connect-actions .btn{
+  flex:1 1 auto;min-width:0;height:32px;min-height:32px;border-radius:9px;
+  padding:4px 9px;font-size:10px;letter-spacing:-.1px;
+  box-shadow:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+body.game-mode.landscape-auto .landscape-dock .connect-actions #disconnect{
+  flex:0 0 45px;padding:4px 5px;
+}
+body.game-mode.landscape-auto .top-actions{gap:6px;flex:0 0 auto}
+body.game-mode.landscape-auto .top-actions .icon-btn{
+  width:32px;height:32px;border-radius:9px
+}
+body.game-mode.landscape-auto .status-pill{
+  border-radius:10px;padding:6px 9px;height:32px;font-size:10px;
+}
+body.game-mode.landscape-auto .topbar .brand-name span{color:#90acff!important}
+body.game-mode.landscape-auto section[aria-label="Controles da garra"]{
+  flex:1 1 auto;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) minmax(135px,17.5%) minmax(0,1fr);
+  grid-template-rows:minmax(0,1fr);column-gap:9px;row-gap:0;
+}
+body.game-mode.landscape-auto .zone-head{display:none}
+body.game-mode.landscape-auto .pads{display:contents}
+body.game-mode.landscape-auto .pads>.pad-panel{
+  min-height:0;min-width:0;height:100%;padding:10px 11px 8px;
+  display:flex;flex-direction:column;align-items:stretch;
+  border-radius:20px;border-color:#3a4c6585;
+  background:radial-gradient(ellipse 58% 71% at 50% 42%,#273b5b75 0,#13223973 60%,transparent 100%),
+    linear-gradient(145deg,#162238,#0b1424);
+  box-shadow:inset 0 1px #c6d3fa17,0 10px 34px #00000030;
+  isolation:isolate;
+}
+body.game-mode.landscape-auto .pads>.pad-panel:first-child{grid-column:1;grid-row:1}
+body.game-mode.landscape-auto .pads>.pad-panel:last-child{
+  grid-column:3;grid-row:1;
+  background:radial-gradient(ellipse 58% 71% at 50% 42%,#16584654 0,#142c2c76 60%,transparent 100%),
+    linear-gradient(145deg,#122a30,#0b1722);
+}
+body.game-mode.landscape-auto .pad-card-head,body.game-mode.landscape-auto .pad-detail{display:none}
+body.game-mode.landscape-auto .pad-panel .pad-label{
+  margin:0;min-height:18px;text-align:center;font-size:11px;
+  font-weight:850;text-transform:uppercase;letter-spacing:1.5px;color:#dbe8fd
+}
+body.game-mode.landscape-auto .pad-wrap{flex:1 1 auto;min-height:0;margin:0;display:grid;place-items:center}
+body.game-mode.landscape-auto .pad{
+  width:min(35vw,58dvh,235px);height:min(35vw,58dvh,235px);
+  min-width:0;min-height:0;max-width:none;max-height:none;
+  border-width:2px;border-color:#779ace8c;
+  background:radial-gradient(circle at 44% 32%,#324e79 0,#1b3153 29%,#142640 48%,#081426 82%);
+  box-shadow:inset 0 12px 23px #030910c7,inset 0 -2px 8px #a6c8fe22,
+    0 0 0 7px #1a2b456b,0 0 0 8px #6e97cf25,0 14px 27px #0008;
+}
+body.game-mode.landscape-auto .pad.mint{
+  border-color:#60c2aa91;
+  background:radial-gradient(circle at 44% 32%,#275b59 0,#17403d 31%,#0b282e 56%,#081622 82%);
+  box-shadow:inset 0 12px 23px #030910c7,inset 0 -2px 8px #a6ffe522,
+    0 0 0 7px #102c2d90,0 0 0 8px #57c6ac25,0 14px 27px #0008;
+}
+body.game-mode.landscape-auto .pad.held{
+  border-color:#a8c5ff;box-shadow:inset 0 12px 23px #030910c7,0 0 0 7px #1a2b456b,0 0 23px #739dff80;
+}
+body.game-mode.landscape-auto .pad.mint.held{
+  border-color:#b4ffe5;box-shadow:inset 0 12px 23px #030910c7,0 0 0 7px #102c2d90,0 0 23px #6cf3cd75;
+}
+body.game-mode.landscape-auto .pad .pad-guide{font-size:12px;color:#91add2ab}
+body.game-mode.landscape-auto .pad .nub{border-width:3px;box-shadow:0 7px 17px #000b,inset 0 2px 9px #fff8}
+body.game-mode.landscape-auto .pad-stats{
+  flex:0 0 auto;display:grid;grid-template-columns:1fr 1fr;
+  margin-top:6px;gap:6px;
+}
+body.game-mode.landscape-auto .pad-stat{
+  background:#0713239b;border-color:#354c6c8f;
+  border-radius:8px;padding:6px 7px;min-height:24px;
+}
+body.game-mode.landscape-auto .pad-stat span,body.game-mode.landscape-auto .pad-stat strong{font-size:10px}
+body.game-mode.landscape-auto section[aria-label="Controles da garra"]>.panel{
+  grid-column:2;grid-row:1;display:flex;flex-direction:column;justify-content:space-between;
+  align-items:stretch;min-width:0;min-height:0;
+  margin:0!important;padding:13px 10px!important;border-radius:17px;
+  border-color:#334968;box-shadow:inset 0 1px #bdcafe12;
+  background:linear-gradient(165deg,#15243b,#0b1625);
+}
+body.game-mode.landscape-auto .landscape-console-head{
+  display:flex;align-items:center;justify-content:center;gap:7px;
+  font-weight:850;font-size:9px;letter-spacing:1px;color:#a8bfdf;white-space:nowrap
+}
+body.game-mode.landscape-auto .console-led{
+  flex:0 0 7px;width:7px;height:7px;border-radius:50%;background:#657990;
+}
+body.is-armed.game-mode.landscape-auto .console-led{
+  background:#65ffdb;box-shadow:0 0 9px #60ffce
+}
+body.game-mode.landscape-auto .console-pin{
+  display:none
+}
+body.game-mode.landscape-auto .grip-section{
+  flex:1 1 auto;min-height:0;
+  display:flex;flex-direction:column;align-items:stretch;justify-content:center;
+  gap:9px;margin:0;
+}
+body.game-mode.landscape-auto .grip-label{
+  display:block;flex:none;text-align:center;font-size:9px;
+  letter-spacing:1.05px;color:#a3b8d4
+}
+body.game-mode.landscape-auto .grip-buttons{
+  display:flex;flex-direction:column;gap:10px;min-width:0
+}
+body.game-mode.landscape-auto .grip-key{
+  min-height:53px;padding:10px 6px;gap:7px;
+  flex:0 0 auto;justify-content:center;
+  border-radius:13px;font-size:11px;letter-spacing:-.15px;
+  border-color:#416785;background:linear-gradient(150deg,#224462,#122b45);
+  box-shadow:inset 0 1px #ffffff14,0 5px 15px #0004;
+}
+body.game-mode.landscape-auto .grip-key svg{width:19px;height:19px;flex:none}
+body.game-mode.landscape-auto .grip-key.down{background:#196254;border-color:#5ff3ca;box-shadow:0 0 15px #40ebb338}
+body.game-mode.landscape-auto .landscape-console-foot{
+  display:block;text-align:center;font-size:8px;
+  letter-spacing:.35px;color:#718eaa;line-height:1.25
+}
+body.game-mode.landscape-auto .estop{
+  flex:0 0 auto;min-height:38px;max-height:38px;margin:0;
+  padding:5px;border-radius:10px;letter-spacing:1.1px;font-size:12px;
+  border-color:#9a465d;background:linear-gradient(150deg,#51202e,#2f1723);
+}
+body.game-mode.landscape-auto .estop.active{
+  background:#102e2b;border-color:#376158;box-shadow:none
+}
+body.game-mode.landscape-auto .estop svg{width:18px;height:18px}
+body.game-mode.landscape-auto .footer{display:none}
+@media(orientation:landscape) and (max-height:420px){
+  body.game-mode.landscape-auto .page{gap:5px}
+  body.game-mode.landscape-auto .pads>.pad-panel{padding:8px 8px 6px}
+  body.game-mode.landscape-auto .pad{width:min(33vw,54dvh,220px);height:min(33vw,54dvh,220px)}
+  body.game-mode.landscape-auto .pad-label{min-height:14px;font-size:10px}
+  body.game-mode.landscape-auto .pad-stat{padding:4px 6px;min-height:20px}
+  body.game-mode.landscape-auto .grip-key{min-height:47px}
+  body.game-mode.landscape-auto .estop{min-height:34px;max-height:34px}
+}
+@media(orientation:landscape) and (max-height:335px){
+  body.game-mode.landscape-auto .brand-name{font-size:12px}
+  body.game-mode.landscape-auto .pad{width:min(32vw,48dvh,195px);height:min(32vw,48dvh,195px)}
+  body.game-mode.landscape-auto .grip-key{min-height:40px}
+  body.game-mode.landscape-auto .grip-label{font-size:8px}
+  body.game-mode.landscape-auto .landscape-console-foot{display:none}
+}
+@media(orientation:landscape) and (max-width:730px){
+  body.game-mode.landscape-auto .topbar{gap:7px}
+  body.game-mode.landscape-auto .brand-name{display:none}
+  body.game-mode.landscape-auto .landscape-dock .connect-actions .btn{font-size:9px;padding-inline:4px}
+  body.game-mode.landscape-auto .status-pill{font-size:9px;padding:5px 6px}
+  body.game-mode.landscape-auto section[aria-label="Controles da garra"]{grid-template-columns:minmax(0,1fr) minmax(114px,19%) minmax(0,1fr);gap:7px}
+  body.game-mode.landscape-auto .grip-key{font-size:10px}
+}
 </style>
 </head>
 <body>
@@ -235,8 +412,9 @@ body.dual-control .dual-badge{background:#103f35;border-color:#52bca5;color:#9ff
   <header class="topbar">
     <div class="brandlock">
       <div class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4v7M11 11h10l2 6-7 4-7-4 2-6Z"/><path d="M9 17 5 23l3 5 5-5M23 17l4 6-3 5-5-5"/><circle cx="16" cy="15" r="1.2" fill="currentColor"/></svg></div>
-      <div><div class="brand-name">Robotbit <span style="color:#9eb7ff">Control</span></div><div class="brand-sub">MOBILE ROBOTICS · V4.1</div></div>
+      <div><div class="brand-name">Robotbit <span style="color:#9eb7ff">Control</span></div><div class="brand-sub">MOBILE ROBOTICS · V4.2</div></div>
     </div>
+    <div class="landscape-dock" id="landscapeDock" aria-label="Conexão no modo horizontal"></div>
     <div class="top-actions">
       <button type="button" id="exitGameMode" class="icon-btn" aria-label="Sair do modo videogame" title="Sair do modo videogame" hidden>↩</button>
       <button class="icon-btn" type="button" id="iphoneHelpButton" aria-label="Ajuda para conectar no iPhone" title="Ajuda para iPhone">?</button>
@@ -279,12 +457,14 @@ body.dual-control .dual-badge{background:#103f35;border-color:#52bca5;color:#9ff
       </div>
     </div>
     <div class="panel" style="padding:16px 19px;margin-top:13px">
-      <div class="grip-section"><div class="grip-label">CONTROLE RÁPIDO DA GARRA · P8</div>
+      <div class="landscape-console-head" aria-hidden="true"><span class="console-led"></span><span>GRIP CONTROL</span><span class="console-pin">P8</span></div>
+    <div class="grip-section"><div class="grip-label">CONTROLE RÁPIDO DA GARRA · P8</div>
         <div class="grip-buttons">
           <button class="grip-key" type="button" id="openGrip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 12H3m0 0 3-3m-3 3 3 3M14 12h7m0 0-3-3m3 3-3 3"/></svg> Abrir garra</button>
           <button class="grip-key" type="button" id="closeGrip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 12h7m0 0-3-3m3 3-3 3m11-3h-7m0 0 3-3m-3 3 3 3"/></svg> Fechar garra</button>
         </div>
       </div>
+      <div class="landscape-console-foot" aria-hidden="true">SEGURE PARA MOVIMENTAR</div>
     </div>
   </section>
   <section class="panel tool-panel" aria-label="Velocidade">
@@ -348,7 +528,7 @@ body.dual-control .dual-badge{background:#103f35;border-color:#52bca5;color:#9ff
     </div>
   </section>
   <button type="button" class="estop active" id="estop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><path d="m12 3 9 16a2 2 0 0 1-1.7 3H4.7A2 2 0 0 1 3 19L12 3Z"/><path d="M12 9v5m0 4h.01"/></svg><span>CONTROLE BLOQUEADO</span></button>
-  <footer class="footer"><span><strong>ROBOTBIT CONTROL V4.1</strong> · Projetado para micro:bit + Robotbit</span><span>Parada por software: não corta a alimentação dos servos.</span></footer>
+  <footer class="footer"><span><strong>ROBOTBIT CONTROL V4.2</strong> · Projetado para micro:bit + Robotbit</span><span>Parada por software: não corta a alimentação dos servos.</span></footer>
 </main>
 
 <div class="help-overlay" id="iphoneHelpOverlay" hidden>
@@ -653,10 +833,18 @@ body.dual-control .dual-badge{background:#103f35;border-color:#52bca5;color:#9ff
     return touch && window.innerWidth>window.innerHeight*1.12 &&
       window.innerHeight<=680 && landscapeQuery.matches;
   }
+  const connectionActions=document.querySelector('.connect-actions');
+  const originalConnectionParent=connectionActions.parentElement;
+  const landscapeDock=$('landscapeDock');
   function applyControllerLayout(){
     const previousAuto=landscapeAuto;
     landscapeAuto=shouldUseLandscapeController();
     if(previousAuto && !landscapeAuto)manualGameMode=false;
+    if(landscapeAuto && connectionActions.parentNode!==landscapeDock){
+      landscapeDock.appendChild(connectionActions);
+    }else if(!landscapeAuto && connectionActions.parentNode!==originalConnectionParent){
+      originalConnectionParent.insertBefore(connectionActions,ui.device);
+    }
     gameModeOn=manualGameMode || landscapeAuto;
     document.body.classList.toggle('game-mode',gameModeOn);
     document.body.classList.toggle('landscape-auto',landscapeAuto);
