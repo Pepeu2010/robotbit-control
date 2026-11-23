@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#080c17">
+  <meta name="description" content="Controle remoto para garra robótica com micro:bit, Robotbit e Bluetooth no Android.">
+  <title>Robotbit Control — Painel de controle</title>
+  <style>
+    :root { color-scheme:dark; --bg:#080c17; --panel:#101827; --panel2:#172339; --line:#2a3952; --txt:#f4f7fd; --muted:#a4b3cd; --blue:#84a2ff; --mint:#6be5bf; --rose:#ff8290; }
+    * { box-sizing:border-box; }
+    html { min-height:100%; background:var(--bg); }
+    body { margin:0; min-height:100vh; background:radial-gradient(ellipse 90% 380px at 50% -140px,#253964,transparent),var(--bg); font:15px/1.5 system-ui,-apple-system,Segoe UI,sans-serif; color:var(--txt); }
+    button,input { font:inherit; }
+    button { cursor:pointer; touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
+    button:focus-visible,input:focus-visible,.pad:focus-visible { outline:2px solid var(--mint); outline-offset:3px; }
+    button:disabled { opacity:.48; cursor:not-allowed; }
+    .page { max-width:920px; margin:auto; padding:20px 16px max(28px,env(safe-area-inset-bottom)); }
+    header,.heading,.line-row,.pill,.grid-head { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+    header { margin-bottom:26px; }
+    .identity { display:flex; align-items:center; gap:12px; }
+    .logo { display:grid; place-items:center; width:45px; height:45px; border-radius:14px; background:linear-gradient(145deg,#9fb8ff,#4768c2); color:#081022; font-weight:900; font-size:24px; box-shadow:0 8px 28px #6e92f822; }
+    .brand { margin:0; font-size:18px; letter-spacing:-.6px; }
+    .tiny { margin:1px 0 0; font-size:10px; letter-spacing:1.8px; color:var(--muted); font-weight:700; }
+    .pill { justify-content:flex-start; border:1px solid var(--line); padding:8px 11px; border-radius:100px; background:#162034; font-size:12px; white-space:nowrap; color:var(--muted); }
+    .light { width:7px; height:7px; border-radius:100px; background:#8390a5; }
+    .pill.live { color:var(--mint); border-color:#32705d; background:#10352c; } .pill.live .light { background:var(--mint); box-shadow:0 0 12px #6be5bf88; }
+    .heading { margin-bottom:15px; align-items:flex-end; }
+    .heading h2 { margin:0; font-size:clamp(25px,6vw,37px); line-height:1.1; letter-spacing:-1.2px; }
+    .heading p { margin:9px 0 0; font-size:13px; color:var(--muted); }
+    .version { background:#1c2c48; border:1px solid #354d76; color:#bad2ff; padding:7px 9px; border-radius:9px; white-space:nowrap; font-size:11px; }
+    .panel { background:linear-gradient(145deg,#152038,#101827); border:1px solid var(--line); padding:18px; border-radius:22px; margin-top:14px; box-shadow:inset 0 1px #ffffff09; }
+    .panel h3 { font-size:15px; margin:0; } .panel h3 small { color:#7f93b3; font-weight:600; font-size:12px; margin-right:6px; }
+    .caption { font-size:12px; color:var(--muted); margin:4px 0 0; }
+    .actions { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:9px; margin-top:14px; }
+    .actions #connect { grid-column:1 / -1; }
+    .actions #enable { min-width:0; }
+    .btn { min-height:47px; border-radius:12px; border:1px solid #4b6192; color:#091020; padding:11px 15px; background:var(--blue); font-size:13px; font-weight:750; }
+    .btn.secondary { background:#1f304e; border-color:#3c5377; color:var(--txt); }
+    .btn.primary { flex:1; }
+    .btn.safe { background:#145343; border-color:#2b8b6a; color:#eafff5; }
+    .device { font-size:12px; color:var(--muted); margin:12px 0 0; overflow-wrap:anywhere; }
+    .pads { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin-top:18px; }
+    .pad-panel { border:1px solid #30405b; border-radius:17px; background:#0d1626; padding:12px 7px 16px; min-width:0; text-align:center; }
+    .pad-label { font-size:13px; font-weight:800; margin:0; }
+    .pad-detail { font-size:10px; letter-spacing:.4px; color:var(--muted); margin:2px 0 12px; }
+    .pad { position:relative; margin:auto; width:min(39vw,260px); height:min(39vw,260px); min-width:130px; min-height:130px; max-width:260px; max-height:260px; border:1px solid #49617d; border-radius:50%; touch-action:none; user-select:none; -webkit-user-select:none; background:radial-gradient(circle,#213654 0 23%,#1b2b45 24% 48%,#142039 49% 74%,#101a2e 75%); box-shadow:inset 0 10px 20px #0004; overflow:hidden; }
+    .pad::before,.pad::after { content:""; position:absolute; background:#7591b135; pointer-events:none; }
+    .pad::before { width:1px; height:100%; left:50%; top:0; } .pad::after { width:100%; height:1px; top:50%; left:0; }
+    .nub { position:absolute; top:50%; left:50%; width:37%; height:37%; border-radius:100px; border:4px solid #aec1ff; background:radial-gradient(circle at 35% 28%,#c1d0ff,#6d91ef 62%,#415fac); transform:translate(-50%,-50%); pointer-events:none; box-shadow:0 9px 17px #0007; }
+    .pad.mint .nub { border-color:#8bf1d0; background:radial-gradient(circle at 35% 28%,#c5ffed,#3bbb99 65%,#207363); }
+    .label { font-size:10px; color:#91a3bf; font-weight:650; margin:10px 0 0; }
+    .axis { display:flex; gap:8px; margin-top:14px; }
+    .axis span { flex:1; font-size:11px; color:#a9bbd7; background:#13213a; border:1px solid #2f4264; padding:7px 4px; border-radius:9px; }
+    .axis strong { color:#fff; font-variant-numeric:tabular-nums; }
+    .grip-buttons { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:15px; }
+    .grip-buttons button { min-height:56px; background:#1f334e; border:1px solid #3b5b82; color:var(--txt); border-radius:13px; font-weight:750; touch-action:none; }
+    .grip-buttons button.down { background:#27554e; border-color:#4eab96; }
+    .controlbar { margin-top:14px; display:grid; grid-template-columns:1fr auto; gap:15px; align-items:center; }
+    .controlbar label { font-size:13px; font-weight:750; }
+    input[type=range] { display:block; width:100%; margin:9px 0; accent-color:var(--blue); }
+    .hint { font-size:12px; color:var(--muted); margin:5px 0 0; }
+    .speed-number { color:var(--mint); background:#12372e; padding:9px 12px; border-radius:10px; font-size:14px; font-weight:850; min-width:56px; text-align:center; }
+    .estop { width:100%; border-radius:15px; border:1px solid #b45166; background:linear-gradient(150deg,#7a293c,#4c1828); min-height:66px; font-weight:850; color:#fff; font-size:16px; margin-top:16px; }
+    .estop.active { background:#194c3c; border-color:#469a79; }
+    .footer { font-size:11px; line-height:1.5; color:#8192ad; margin:18px 5px 0; text-align:center; }
+    .snackbar { position:fixed; z-index:99; left:50%; transform:translate(-50%,12px); bottom:calc(18px + env(safe-area-inset-bottom)); background:#20314e; border:1px solid #5976a9; border-radius:12px; box-shadow:0 14px 40px #000a; padding:13px 16px; min-width:180px; max-width:calc(100vw - 26px); color:#f7faff; font-size:13px; opacity:0; pointer-events:none; transition:opacity .16s,transform .16s; }
+    .snackbar.visible { opacity:1; transform:translate(-50%,0); }
+    @media (min-width:760px) { .page { padding:28px 24px 38px; } .panel { padding:22px; } .pads { gap:20px; } .actions { display:flex; } .actions #connect { flex:1; } }
+    @media (max-width:360px) { .panel { padding:13px; } .pad { width:38vw; height:38vw; min-width:112px; min-height:112px; } .pad-panel { padding:11px 5px; } .pad-detail { font-size:9px; } }
+  </style>
+</head>
+<body>
+<main class="page">
+  <header>
+    <div class="identity"><div class="logo">R</div><div><h1 class="brand">Robotbit Control</h1><p class="tiny">MOBILE ROBOTICS</p></div></div>
+    <div id="status" class="pill" role="status"><span class="light"></span><span id="statusText">Desconectado</span></div>
+  </header>
+  <div class="heading">
+    <div><h2>Controle na<br>palma da mão.</h2><p>Micro:bit + Robotbit • 4 servos • Bluetooth BLE</p></div>
+    <span class="version">V2.0</span>
+  </div>
+
+  <section class="panel" aria-label="Conexão">
+    <h3><small>01 /</small> Conexão sem fio</h3>
+    <p class="caption">Chrome no Android • Site hospedado em HTTPS</p>
+    <div class="actions">
+      <button type="button" id="connect" class="btn primary">Conectar ao micro:bit</button>
+      <button type="button" id="enable" class="btn safe" disabled>Habilitar controle</button>
+      <button type="button" id="disconnect" class="btn secondary" disabled>Sair</button>
+    </div>
+    <p id="device" class="device">A conexão não movimenta os motores. Habilite o controle antes de usar.</p>
+  </section>
+
+  <section class="panel" aria-label="Movimentos">
+    <div class="line-row"><h3><small>02 /</small> Movimentos</h3><span class="caption">Toque e arraste</span></div>
+    <div class="pads">
+      <div class="pad-panel">
+        <div class="pad-label">Braço</div><p class="pad-detail">P12 ↔ &nbsp; P13 ↕</p>
+        <div id="leftPad" class="pad" role="application" tabindex="0" aria-label="Joystick do braço: horizontal gira a base, vertical move para frente e para trás"><div id="leftNub" class="nub"></div></div>
+        <div class="axis"><span>P12 <strong id="leftX">0</strong></span><span>P13 <strong id="leftY">0</strong></span></div>
+      </div>
+      <div class="pad-panel">
+        <div class="pad-label">Pulso e garra</div><p class="pad-detail">P8 ↔ &nbsp; P14 ↕</p>
+        <div id="rightPad" class="pad mint" role="application" tabindex="0" aria-label="Joystick do pulso e garra: horizontal abre e fecha, vertical move o pulso"><div id="rightNub" class="nub"></div></div>
+        <div class="axis"><span>P8 <strong id="rightX">0</strong></span><span>P14 <strong id="rightY">0</strong></span></div>
+      </div>
+    </div>
+    <div class="grip-buttons">
+      <button type="button" id="openGrip">↔ Abrir garra · P8</button>
+      <button type="button" id="closeGrip">→← Fechar garra · P8</button>
+    </div>
+    <p class="hint">Soltou o joystick? Não são enviados novos passos; o servo mantém o ângulo alcançado.</p>
+  </section>
+
+  <section class="panel" aria-label="Velocidade">
+    <h3><small>03 /</small> Precisão de movimento</h3>
+    <div class="controlbar">
+      <div><label for="speed">Passo por comando</label><input id="speed" type="range" min="1" max="3" value="1" step="1"><p class="hint">Comece no nível 1 para evitar forçar as articulações.</p></div>
+      <div id="speedValue" class="speed-number">1°</div>
+    </div>
+    <button id="estop" class="estop" type="button">■ &nbsp;PARAR E BLOQUEAR</button>
+  </section>
+  <p class="footer">Parada por software: bloqueia novos comandos, mas não corta a alimentação ou o torque dos servos. Não é um dispositivo de segurança certificado.</p>
+</main>
+<div id="toast" class="snackbar" role="status" aria-live="polite"></div>
+<script>
+(() => {
+  'use strict';
+  // UART do micro:bit (documentação oficial: escrita do CELULAR na característica RX 0003).
+  const UART_SERVICE = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
+  const UART_WRITE = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
+  const $ = id => document.getElementById(id);
+  const ui = { status:$('status'), statusText:$('statusText'), connect:$('connect'), enable:$('enable'), disconnect:$('disconnect'), device:$('device'), leftX:$('leftX'),leftY:$('leftY'),rightX:$('rightX'),rightY:$('rightY'), speed:$('speed'),speedValue:$('speedValue'), leftPad:$('leftPad'),rightPad:$('rightPad'),leftNub:$('leftNub'),rightNub:$('rightNub'), openGrip:$('openGrip'),closeGrip:$('closeGrip'),stop:$('estop'),toast:$('toast') };
+  const textEncoder = new TextEncoder();
+  let bleDevice = null, bleWrite = null, connected = false, armed = false;
+  let writeChain = Promise.resolve(), tickTimer = null, toastTimeout = null, sendingMove = false;
+  let nextAxis = 0, gripOverride = 0;
+  const pads = { left:{x:0,y:0,id:null}, right:{x:0,y:0,id:null} };
+  const clamp = (n,min,max)=>Math.min(max,Math.max(min,n));
+  function toast(message) { ui.toast.textContent=message; ui.toast.classList.add('visible'); clearTimeout(toastTimeout); toastTimeout=setTimeout(()=>ui.toast.classList.remove('visible'),3300); }
+  function render() {
+    ui.status.classList.toggle('live',connected);
+    ui.statusText.textContent=connected?(armed?'Ativo':'Conectado'):'Desconectado';
+    ui.connect.disabled=connected; ui.enable.disabled=!connected||armed; ui.disconnect.disabled=!connected;
+    ui.stop.classList.toggle('active',!armed);
+    ui.stop.textContent=armed?'■   PARAR E BLOQUEAR':'■   CONTROLE BLOQUEADO';
+    ui.leftX.textContent=pads.left.x;ui.leftY.textContent=pads.left.y;
+    ui.rightX.textContent=pads.right.x;ui.rightY.textContent=pads.right.y;
+    ui.speedValue.textContent=ui.speed.value+'°';
+    ui.openGrip.classList.toggle('down',gripOverride===-1);
+    ui.closeGrip.classList.toggle('down',gripOverride===1);
+  }
+  function resetAxes() {
+    gripOverride=0;
+    for (const key of ['left','right']) {
+      pads[key].x=0;pads[key].y=0;pads[key].id=null;
+      $(key+'Nub').style.transform='translate(-50%,-50%)';
+    }
+    render();
+  }
+  function onDisconnected() {
+    connected=false; armed=false; bleWrite=null; stopTicker(); resetAxes();
+    ui.device.textContent='Desconectado. Conecte e habilite novamente.';
+    render();toast('Bluetooth desconectado.');
+  }
+  async function write(code) {
+    if (!connected || !bleWrite) return false;
+    // Uma escrita BLE de cada vez, com no máximo 1 movimento pendente.
+    const op = writeChain.then(async()=>{
+      if (!connected || !bleWrite) return false;
+      const data = textEncoder.encode(code+'\n');
+      if (bleWrite.properties.writeWithoutResponse && bleWrite.writeValueWithoutResponse) await bleWrite.writeValueWithoutResponse(data);
+      else if (bleWrite.writeValueWithResponse) await bleWrite.writeValueWithResponse(data);
+      else await bleWrite.writeValue(data);
+      return true;
+    });
+    writeChain=op.catch(()=>{});
+    try { return await op; }
+    catch (e) { console.error('Falha BLE:',e); toast('Falha ao enviar comando Bluetooth.'); return false; }
+  }
+  function stopTicker(){ if(tickTimer!==null){clearInterval(tickTimer);tickTimer=null;} }
+  function startTicker(){stopTicker();tickTimer=setInterval(sendTick,85);}
+  function sendTick(){
+    if(!connected||!armed||sendingMove||document.hidden)return;
+    const axes=[pads.left.x,pads.left.y,pads.right.y,gripOverride!==0?gripOverride:pads.right.x];
+    const codes=[['L','R'],['B','F'],['D','U'],['O','C']];
+    let chosen='';
+    for(let i=0;i<4;i++) {
+      const index=(nextAxis+i)%4;
+      const val=axes[index];
+      if(Math.abs(val)>=.24) { chosen=codes[index][val>0?1:0];nextAxis=(index+1)%4;break; }
+    }
+    if(!chosen)return;
+    sendingMove=true;
+    write(chosen).finally(()=>{sendingMove=false;});
+  }
+  async function connect() {
+    if(!window.isSecureContext||!navigator.bluetooth){toast('Abra pelo Chrome Android, em HTTPS (GitHub Pages).');return;}
+    ui.connect.disabled=true;ui.device.textContent='Procurando micro:bit por Bluetooth...';
+    try {
+      // AcceptAllDevices evita filtros de nomes diferentes entre firmwares MakeCode.
+      const device=await navigator.bluetooth.requestDevice({acceptAllDevices:true,optionalServices:[UART_SERVICE]});
+      if(bleDevice && bleDevice!==device) bleDevice.removeEventListener('gattserverdisconnected',onDisconnected);
+      bleDevice=device;
+      bleDevice.addEventListener('gattserverdisconnected',onDisconnected);
+      const server=await device.gatt.connect();
+      const service=await server.getPrimaryService(UART_SERVICE);
+      bleWrite=await service.getCharacteristic(UART_WRITE);
+      connected=true;armed=false;resetAxes();
+      ui.device.textContent='Dispositivo: '+(device.name||'micro:bit')+'. Toque em Habilitar controle.';
+      render();toast('Conectado. Habilite para movimentar.');
+    } catch(e) {console.error('Conexão BLE:',e);connected=false;bleWrite=null;armed=false;ui.device.textContent='Conexão não concluída. Confira o firmware BLE UART no micro:bit.';toast(e.name==='NotFoundError'?'Seleção cancelada.':'Não foi possível conectar ao serviço UART.');}
+    finally{render();}
+  }
+  async function enable() {
+    if(!connected)return;
+    resetAxes();
+    // Firmware só aceita comandos de movimento depois de receber '#'.
+    if(await write('#')) {
+      armed=true;render();await write(ui.speed.value);startTicker();toast('Controle habilitado. Movimente com cuidado.');
+    }
+  }
+  async function stop() {
+    armed=false;stopTicker();resetAxes();render();
+    if(connected) await write('!');
+    toast('Comandos bloqueados. Para retomar, toque em Habilitar.');
+  }
+  ui.connect.addEventListener('click',connect);
+  ui.enable.addEventListener('click',enable);
+  ui.disconnect.addEventListener('click',async()=>{await stop();if(bleDevice?.gatt?.connected)bleDevice.gatt.disconnect();else onDisconnected();});
+  ui.stop.addEventListener('click',stop);
+  ui.speed.addEventListener('input',()=>{render();if(connected&&armed)write(ui.speed.value);});
+  // Cada joystick aceita um dedo, permitindo controlar os dois ao mesmo tempo.
+  function bindPad(key) {
+    const pad=$(key+'Pad'), nub=$(key+'Nub'), state=pads[key];
+    function move(ev) {
+      const rect=pad.getBoundingClientRect(),radius=(rect.width/2)-(nub.offsetWidth/2)-5;
+      const x=ev.clientX-(rect.left+rect.width/2),y=ev.clientY-(rect.top+rect.height/2);
+      const distance=Math.hypot(x,y),scale=distance>radius?radius/distance:1;
+      const vx=x*scale,vy=y*scale;
+      let nx=radius?vx/radius:0, ny=radius?-vy/radius:0;
+      state.x=Math.abs(nx)<.24?0:Math.round(nx*100)/100;
+      state.y=Math.abs(ny)<.24?0:Math.round(ny*100)/100;
+      nub.style.transform=`translate(-50%,-50%) translate(${vx}px,${vy}px)`;
+      render();
+    }
+    pad.addEventListener('pointerdown',ev=>{
+      if(!armed||state.id!==null)return;
+      ev.preventDefault();state.id=ev.pointerId;pad.setPointerCapture(ev.pointerId);move(ev);
+    });
+    pad.addEventListener('pointermove',ev=>{if(ev.pointerId===state.id){ev.preventDefault();move(ev);}});
+    function release(ev){if(ev.pointerId!==state.id)return;state.id=null;state.x=0;state.y=0;nub.style.transform='translate(-50%,-50%)';render();}
+    pad.addEventListener('pointerup',release);pad.addEventListener('pointercancel',release);
+    pad.addEventListener('lostpointercapture',()=>{if(state.id!==null){state.id=null;state.x=0;state.y=0;nub.style.transform='translate(-50%,-50%)';render();}});
+  }
+  bindPad('left');bindPad('right');
+  function bindGrip(id,dir) {
+    const button=$(id);
+    button.addEventListener('pointerdown',ev=>{if(!armed)return;ev.preventDefault();button.setPointerCapture(ev.pointerId);gripOverride=dir;render();});
+    const release=()=>{gripOverride=0;render();};
+    button.addEventListener('pointerup',release);button.addEventListener('pointercancel',release);button.addEventListener('lostpointercapture',release);
+  }
+  bindGrip('openGrip',-1);bindGrip('closeGrip',1);
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)stop();});
+  window.addEventListener('blur',()=>{if(armed)stop();});
+  render();
+})();
+</script>
+</body>
+</html>
