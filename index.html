@@ -454,6 +454,55 @@ body.game-mode.landscape-auto .grip-section{
   body.game-mode.landscape-auto #landscapeSpeedSlot .speed-chip{min-height:23px}
   body.game-mode.landscape-auto .landscape-mini-label{display:none}
 }
+
+/* v4.4 — premium Three.js robot visualization */
+.sim-layout{grid-template-columns:minmax(0,1.7fr) minmax(158px,.65fr);gap:14px}
+.sim-screen{
+  height:355px;min-height:0;overflow:hidden;isolation:isolate;
+  border:1px solid #365477;position:relative;
+  border-radius:20px;background:radial-gradient(ellipse 80% 75% at 50% 44%,#23395b,#0b1527 73%);
+  box-shadow:inset 0 1px #bad5ff24,0 18px 40px #00000042
+}
+.sim-ambient{position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse 57% 68% at 61% 49%,#5ea2ff16,transparent 81%),
+    radial-gradient(ellipse 35% 43% at 25% 66%,#37e2ce12,transparent 85%);
+}
+.sim-screen::after{content:"";inset:0;position:absolute;pointer-events:none;z-index:3;
+  background:linear-gradient(180deg,#09152450,transparent 26%,transparent 70%,#0a142a8f)
+}
+.sim-screen #armCanvas{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block}
+.sim-screen.three-active #armCanvas{display:none}
+.sim-three-host{position:absolute;inset:0;z-index:1;touch-action:pan-y}
+.sim-three-host canvas{display:block!important;width:100%!important;height:100%!important;touch-action:none}
+.sim-topline,.sim-bottomline{position:absolute;left:14px;right:14px;z-index:5;pointer-events:none;display:flex;gap:8px;align-items:center}
+.sim-topline{top:14px}
+.sim-bottomline{bottom:12px;justify-content:space-between;align-items:end}
+.sim-topline #arm3dStatus{font-weight:900;color:#d6eaff;font-size:9px;letter-spacing:1.2px;white-space:nowrap}
+.sim-live-dot{width:7px;height:7px;flex:none;background:#64edd1;border-radius:50%;box-shadow:0 0 12px #4cead1}
+.sim-chip{margin-left:auto;color:#b6cfee;background:#192c48d9;border:1px solid #526c916b;border-radius:7px;padding:5px 7px;font-size:8px;font-weight:850;letter-spacing:.7px;white-space:nowrap}
+.sim-hint{color:#afc3e1;font-size:9px;font-weight:700;max-width:55%;line-height:1.5;text-shadow:0 1px 8px #000}
+.sim-hint span{color:#54e2c7;padding:0 3px}
+.sim-view-actions{display:flex;align-items:center;gap:5px;pointer-events:auto}
+.sim-view-btn{padding:6px 9px;min-height:28px;border-radius:8px;background:#132846d9;color:#cbdaf4;border:1px solid #496587;font-size:10px;font-weight:850;transition:background .18s,border .18s;backdrop-filter:blur(7px)}
+.sim-view-btn.selected,.sim-view-btn:hover{background:#345485;border-color:#8aaff0;color:white}
+.statbox{transition:border-color .18s,background .18s}
+.statbox:first-child{background:linear-gradient(145deg,#1b3150,#142238);border-color:#5d83b1}
+.statbox:first-child strong{color:#cbe0ff}
+.sim-note{line-height:1.6}
+.sim-note strong{color:#c0dcff}
+@media(max-width:680px){
+ .sim-layout{grid-template-columns:1fr}
+ .sim-screen{height:310px}
+ .sim-stats{grid-template-columns:repeat(4,minmax(0,1fr))}
+}
+@media(max-width:400px){
+ .sim-screen{height:275px}
+ .sim-hint{font-size:8px}
+ .sim-chip{display:none}
+ .sim-stats{grid-template-columns:1fr 1fr}
+}
+@media(prefers-reduced-motion:reduce){.sim-live-dot{box-shadow:none}}
+
 </style>
 </head>
 <body>
@@ -461,7 +510,7 @@ body.game-mode.landscape-auto .grip-section{
   <header class="topbar">
     <div class="brandlock">
       <div class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4v7M11 11h10l2 6-7 4-7-4 2-6Z"/><path d="M9 17 5 23l3 5 5-5M23 17l4 6-3 5-5-5"/><circle cx="16" cy="15" r="1.2" fill="currentColor"/></svg></div>
-      <div><div class="brand-name">Robotbit <span style="color:#9eb7ff">Control</span></div><div class="brand-sub">MOBILE ROBOTICS · V4.3</div></div>
+      <div><div class="brand-name">Robotbit <span style="color:#9eb7ff">Control</span></div><div class="brand-sub">MOBILE ROBOTICS · V4.4</div></div>
     </div>
     <div class="landscape-dock" id="landscapeDock" aria-label="Conexão no modo horizontal"></div>
     <div class="top-actions">
@@ -541,7 +590,19 @@ body.game-mode.landscape-auto .grip-section{
     </div>
     <div id="tab-preview" class="tabpage" role="tabpanel">
       <div class="sim-layout">
-        <div class="sim-screen"><div class="sim-tag">VISUALIZAÇÃO ESTIMADA</div><canvas id="armCanvas" role="img" aria-label="Representação simulada da garra robótica, não é a posição real"></canvas></div>
+        <div class="sim-screen" id="armStage">
+          <div class="sim-ambient" aria-hidden="true"></div>
+          <canvas id="armCanvas" role="img" aria-label="Desenho alternativo da garra, baseado nos comandos enviados, não na posição física real"></canvas>
+          <div id="arm3dHost" class="sim-three-host" aria-label="Visualização 3D ilustrativa da garra robótica"></div>
+          <div class="sim-topline"><span class="sim-live-dot" aria-hidden="true"></span><span id="arm3dStatus">PRÉVIA INTERATIVA</span><span class="sim-chip">DIGITAL TWIN · ESTIMADO</span></div>
+          <div class="sim-bottomline"><div class="sim-hint">Arraste para girar <span aria-hidden="true">·</span> Pinça para aproximar</div>
+            <div class="sim-view-actions">
+              <button id="viewIso" type="button" class="sim-view-btn selected" aria-label="Vista em perspectiva" aria-pressed="true">3D</button>
+              <button id="viewFront" type="button" class="sim-view-btn" aria-label="Vista frontal" aria-pressed="false">Frente</button>
+              <button id="viewReset" type="button" class="sim-view-btn" aria-label="Restaurar a câmera">↺</button>
+            </div>
+          </div>
+        </div>
         <div class="sim-stats">
           <div class="statbox"><strong id="sentCount">0</strong><span>Comandos BLE</span></div>
           <div class="statbox"><strong id="simBase">0</strong><span>Base P12 (passos)</span></div>
@@ -549,7 +610,7 @@ body.game-mode.landscape-auto .grip-section{
           <div class="statbox"><strong id="simHand">0</strong><span>Pulso P14 (passos)</span></div>
         </div>
       </div>
-      <p class="sim-note">A ilustração reage aos comandos enviados. Não mede a posição física dos servos, a bateria ou a força da garra. Para isso seria preciso atualizar o firmware ou adicionar sensores.</p>
+      <p class="sim-note"><strong>Modelo demonstrativo:</strong> o braço 3D acompanha os comandos enviados, mas não recebe a posição real dos servos. Os movimentos e proporções são ilustrativos; sensores/telemetria exigiriam mudanças no hardware ou firmware.</p>
     </div>
     <div id="tab-settings" class="tabpage" role="tabpanel" hidden>
       <div class="pref-grid">
@@ -578,7 +639,7 @@ body.game-mode.landscape-auto .grip-section{
     </div>
   </section>
   <button type="button" class="estop active" id="estop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><path d="m12 3 9 16a2 2 0 0 1-1.7 3H4.7A2 2 0 0 1 3 19L12 3Z"/><path d="M12 9v5m0 4h.01"/></svg><span>CONTROLE BLOQUEADO</span></button>
-  <footer class="footer"><span><strong>ROBOTBIT CONTROL V4.3</strong> · Projetado para micro:bit + Robotbit</span><span>Parada por software: não corta a alimentação dos servos.</span></footer>
+  <footer class="footer"><span><strong>ROBOTBIT CONTROL V4.4</strong> · Projetado para micro:bit + Robotbit</span><span>Parada por software: não corta a alimentação dos servos.</span></footer>
 </main>
 
 <div class="help-overlay" id="iphoneHelpOverlay" hidden>
@@ -718,7 +779,7 @@ body.game-mode.landscape-auto .grip-section{
       tab.classList.toggle('selected',selected);
       tab.setAttribute('aria-selected',selected?'true':'false');
     });
-    if(name==='preview')requestAnimationFrame(drawArm);
+    if(name==='preview'){requestAnimationFrame(drawArm);if(window.robotbit3D?.show)window.robotbit3D.show();}
   }
   lab.tabs.forEach(tab=>tab.addEventListener('click',()=>showTab(tab.dataset.tab)));
   function disableTilt(){
@@ -826,9 +887,11 @@ body.game-mode.landscape-auto .grip-section{
       const n=previewState.steps[i];
       $(id).textContent=(n>0?'+':'')+String(n);
     }
+    if(window.robotbit3D?.setSteps)window.robotbit3D.setSteps(previewState.steps);
     if(!$('tab-preview').hidden)requestAnimationFrame(drawArm);
   }
   function drawArm(){
+    if($('armStage').classList.contains('three-active'))return;
     const canvas=lab.canvas,rect=canvas.getBoundingClientRect();
     if(!rect.width||!rect.height)return;
     const w=rect.width,h=rect.height,dpr=Math.min(window.devicePixelRatio||1,2);
@@ -873,7 +936,13 @@ body.game-mode.landscape-auto .grip-section{
     ctx.fillText('P12 · base',Math.max(10,p0.x-28),Math.min(h-8,p0.y+25));
     ctx.fillText('P14 · pulso',Math.min(w-90,p3.x+10),Math.max(20,p3.y-14));
   }
-  window.addEventListener('resize',()=>{if(!$('tab-preview').hidden)requestAnimationFrame(drawArm);});
+  window.addEventListener('resize',()=>{
+    if(!$('tab-preview').hidden)requestAnimationFrame(drawArm);
+    if(window.robotbit3D?.resize)window.robotbit3D.resize();
+  });
+  $('viewIso').addEventListener('click',()=>{if(window.robotbit3D?.cameraPreset)window.robotbit3D.cameraPreset('iso');});
+  $('viewFront').addEventListener('click',()=>{if(window.robotbit3D?.cameraPreset)window.robotbit3D.cameraPreset('front');});
+  $('viewReset').addEventListener('click',()=>{if(window.robotbit3D?.cameraPreset)window.robotbit3D.cameraPreset('iso');});
 
   // Rotation only switches layout: browsers disallow forced fullscreen on resize.
   const landscapeQuery=window.matchMedia('(orientation: landscape)');
@@ -1185,6 +1254,7 @@ body.game-mode.landscape-auto .grip-section{
   render();
   applyControllerLayout();
   requestAnimationFrame(drawArm);
+  window.robotbitPreviewSteps=previewState.steps.slice();
   if (isIOS && !savedHelpChoice()) showIphoneHelp();
 })();
 </script>
