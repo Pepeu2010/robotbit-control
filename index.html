@@ -504,13 +504,15 @@ body.game-mode.landscape-auto .grip-section{
 @media(prefers-reduced-motion:reduce){.sim-live-dot{box-shadow:none}}
 
 </style>
+  <link rel="stylesheet" href="./studio.css">
+  <script defer src="./studio.js"></script>
 </head>
 <body>
 <main class="page">
   <header class="topbar">
     <div class="brandlock">
       <div class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4v7M11 11h10l2 6-7 4-7-4 2-6Z"/><path d="M9 17 5 23l3 5 5-5M23 17l4 6-3 5-5-5"/><circle cx="16" cy="15" r="1.2" fill="currentColor"/></svg></div>
-      <div><div class="brand-name">Robotbit <span style="color:#9eb7ff">Control</span></div><div class="brand-sub">MOBILE ROBOTICS · V4.4</div></div>
+      <div><div class="brand-name">Robotbit <span style="color:#9eb7ff">Control</span></div><div class="brand-sub">MOBILE ROBOTICS · V5.0</div></div>
     </div>
     <div class="landscape-dock" id="landscapeDock" aria-label="Conexão no modo horizontal"></div>
     <div class="top-actions">
@@ -639,7 +641,7 @@ body.game-mode.landscape-auto .grip-section{
     </div>
   </section>
   <button type="button" class="estop active" id="estop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><path d="m12 3 9 16a2 2 0 0 1-1.7 3H4.7A2 2 0 0 1 3 19L12 3Z"/><path d="M12 9v5m0 4h.01"/></svg><span>CONTROLE BLOQUEADO</span></button>
-  <footer class="footer"><span><strong>ROBOTBIT CONTROL V4.4</strong> · Projetado para micro:bit + Robotbit</span><span>Parada por software: não corta a alimentação dos servos.</span></footer>
+  <footer class="footer"><span><strong>ROBOTBIT CONTROL V5.0</strong> · Projetado para micro:bit + Robotbit</span><span>Parada por software: não corta a alimentação dos servos.</span></footer>
 </main>
 
 <div class="help-overlay" id="iphoneHelpOverlay" hidden>
@@ -727,6 +729,46 @@ body.game-mode.landscape-auto .grip-section{
   const pads = { left:{x:0,y:0,id:null}, right:{x:0,y:0,id:null} };
 
   const clamp = (n,min,max)=>Math.min(max,Math.max(min,n));
+  const v5State={lastInput:Date.now(),budgets:[0,0,0,0],tick:0};
+  function emitV5(name,detail){window.dispatchEvent(new CustomEvent('robotbit:'+name,{detail}));}
+  const v5Settings=()=>window.RobotbitV5Options||{};
+  function setPreviewSteps(steps){
+    previewState.steps=Array.from({length:4},(_,i)=>clamp(Number(steps[i])||0,-32,32));
+    for(const [i,id] of ['simBase','simArm','simHand'].entries()){
+      const n=previewState.steps[i];$(id).textContent=(n>0?'+':'')+String(n);
+    }
+    if(window.robotbit3D?.setSteps)window.robotbit3D.setSteps(previewState.steps);
+    requestAnimationFrame(drawArm);
+    emitV5('simulation',{steps:previewState.steps.slice()});
+    return previewState.steps.slice();
+  }
+  window.RobotbitBridge={
+    snapshot(){return {connected,armed,steps:previewState.steps.slice(),sent:previewState.sent,speed:Number(ui.speed.value),device:bleDevice?.name||null};},
+    stop(){return stop();},
+    setSteps(steps){return setPreviewSteps(steps);},
+    simulate(code,step=1){
+      if(!Object.hasOwn(commandChannels,code))return null;
+      const [axis,direction]=commandChannels[code];
+      const next=previewState.steps.slice();
+      next[axis]=clamp(next[axis]+direction*clamp(Number(step)||1,1,3),-32,32);
+      setPreviewSteps(next);
+      emitV5('virtualcommand',{code,step,steps:next});
+      return next;
+    },
+    speed(value){
+      const next=String(clamp(Number(value)||1,1,3));
+      ui.speed.value=next;ui.speed.dispatchEvent(new Event('input',{bubbles:true}));
+      return next;
+    },
+    activity(){v5State.lastInput=Date.now();},
+    limit(name,details){emitV5(name,details||{});}
+  };
+  ['pointerdown','pointermove','keydown'].forEach(type=>{
+    document.addEventListener(type,ev=>{
+      if(type==='pointermove' && !ev.buttons && ev.pointerType==='mouse')return;
+      if(armed)v5State.lastInput=Date.now();
+    },{passive:true});
+  });
   const prefKey='robotbit-control-v4-settings';
   function loadPrefs(){
     try{
@@ -889,6 +931,7 @@ body.game-mode.landscape-auto .grip-section{
     }
     if(window.robotbit3D?.setSteps)window.robotbit3D.setSteps(previewState.steps);
     if(!$('tab-preview').hidden)requestAnimationFrame(drawArm);
+    emitV5('command',{code,speed:Number(ui.speed.value),steps:previewState.steps.slice(),sent:previewState.sent,at:Date.now()});
   }
   function drawArm(){
     if($('armStage').classList.contains('three-active'))return;
@@ -1049,6 +1092,7 @@ body.game-mode.landscape-auto .grip-section{
     document.querySelectorAll('.speed-chip').forEach(el=>{const selected=el.dataset.speed===ui.speed.value;el.classList.toggle('selected',selected);el.setAttribute('aria-pressed',selected?'true':'false');});
     ui.openGrip.classList.toggle('down',gripOverride===-1);
     ui.closeGrip.classList.toggle('down',gripOverride===1);
+    if(window.RobotbitBridge)emitV5('state',{connected,armed,speed:Number(ui.speed.value)});
   }
   function resetAxes() {
     gripOverride=0;
@@ -1067,6 +1111,7 @@ body.game-mode.landscape-auto .grip-section{
   async function write(code) {
     if (!connected || !bleWrite) return false;
     // Uma escrita BLE de cada vez, com no máximo 1 movimento pendente.
+    const started=performance.now();
     const op = writeChain.then(async()=>{
       if (!connected || !bleWrite) return false;
       if (commandChannels[code] && !armed) return false;
@@ -1079,24 +1124,50 @@ body.game-mode.landscape-auto .grip-section{
       return true;
     });
     writeChain=op.catch(()=>{});
-    try { return await op; }
-    catch (e) { console.error('Falha BLE:',e); toast('Falha ao enviar comando Bluetooth.'); return false; }
+    try {
+      const ok=await op;
+      if(ok)emitV5('ble',{code,ok:true,ms:Math.round(performance.now()-started),at:Date.now()});
+      return ok;
+    }catch(e) {
+      emitV5('ble',{code,ok:false,ms:Math.round(performance.now()-started),error:String(e?.message||e),at:Date.now()});
+      console.error('Falha BLE:',e); toast('Falha ao enviar comando Bluetooth.'); return false;
+    }
   }
   function stopTicker(){ if(tickTimer!==null){clearInterval(tickTimer);tickTimer=null;} }
   function startTicker(){stopTicker();tickTimer=setInterval(sendTick,55);}
   function sendTick(){
     if(!connected||!armed||sendingMove||document.hidden)return;
+    const settings=v5Settings();
+    const inactivity=Number(settings.idleSeconds)||0;
+    if(inactivity>0&&Date.now()-v5State.lastInput>inactivity*1000){
+      emitV5('safety',{type:'idle',seconds:inactivity});
+      void stop();return;
+    }
+    if(settings.cautious&&ui.speed.value!=='1'){
+      ui.speed.value='1';render();void write('1');
+    }
     const axes=effectiveAxes();
     const codes=[['L','R'],['B','F'],['D','U'],['O','C']];
+    const curve=clamp(Number(settings.curve)||1,.55,2.6);
+    const sensitivity=clamp(Number(settings.sensitivity)||1,.4,1.8);
+    const deadzone=preferences.deadzone/100;
+    for(let i=0;i<4;i++){
+      const magnitude=Math.abs(axes[i]);
+      if(magnitude>=deadzone){
+        const strength=Math.min(1,Math.pow(magnitude,curve)*sensitivity);
+        v5State.budgets[i]=Math.min(1.75,v5State.budgets[i]+Math.max(.08,strength));
+      }else v5State.budgets[i]=0;
+    }
     let chosen='';
-    for(let i=0;i<4;i++) {
+    for(let i=0;i<4;i++){
       const index=(nextAxis+i)%4;
-      const val=axes[index];
-      if(Math.abs(val)>=.24) { chosen=codes[index][val>0?1:0];nextAxis=(index+1)%4;break; }
+      if(v5State.budgets[index]>=1){
+        chosen=codes[index][axes[index]>0?1:0];
+        v5State.budgets[index]-=1;nextAxis=(index+1)%4;break;
+      }
     }
     if(!chosen)return;
-    sendingMove=true;
-    write(chosen).finally(()=>{sendingMove=false;});
+    sendingMove=true;write(chosen).finally(()=>{sendingMove=false;});
   }
   async function connect() {
     if(!window.isSecureContext){ui.device.textContent='Abra o site por HTTPS (GitHub Pages).';toast('Conexão Bluetooth exige HTTPS.');return;}
@@ -1130,11 +1201,13 @@ body.game-mode.landscape-auto .grip-section{
     resetAxes();
     // Firmware só aceita comandos de movimento depois de receber '#'.
     if(await write('#')) {
+      v5State.lastInput=Date.now();v5State.budgets.fill(0);
       armed=true;render();await write(ui.speed.value);startTicker();toast('Controle habilitado. Movimente com cuidado.');
     }
   }
   async function stop() {
-    armed=false;stopTicker();resetAxes();render();
+    armed=false;stopTicker();v5State.budgets.fill(0);resetAxes();render();
+    emitV5('safety',{type:'disarmed',at:Date.now()});
     if(connected) await write('!');
     toast('Comandos bloqueados. Para retomar, toque em Habilitar.');
   }
