@@ -150,6 +150,7 @@
     }
     if(state.view==='studio'&&next!=='studio')moveStage(false);
     if(next!=='motion')cancelPlayback();
+    if(next!=='missions'&&state.mission!==null)cancelMission();
     state.view=next;
     document.body.classList.toggle('studio-subpage',next!=='control');
     nav.querySelectorAll('button').forEach(b=>b.setAttribute('aria-current',b.dataset.view===next?'page':'false'));
@@ -357,7 +358,15 @@
   });
   function metrics(){
     const ok=state.bleOk,avg=ok?(state.bleTime.reduce((a,b)=>a+b,0)/state.bleTime.length):0;
-    return [[String(state.sentCodes),'Comandos aos motores'],[String(state.bleFail),'Erros BLE'],[Math.round(avg)+' ms','Média da escrita'],[duration((Date.now()-state.sessionStart)/1000),'Duração da sessão']];
+    state.lastCommandTimes=state.lastCommandTimes.filter(t=>Date.now()-t<60000);
+    return [
+      [String(state.sentCodes),'Comandos aos motores'],
+      [String(state.bleFail),'Erros BLE'],
+      [Math.round(avg)+' ms','Média da escrita'],
+      [duration((Date.now()-state.sessionStart)/1000),'Duração da sessão'],
+      [state.lastCommandTimes.length+'/min','Ritmo recente'],
+      [String(state.bleOk),'Operações BLE OK']
+    ];
   }
   function refreshDiagnostics(){
     const root=$('diagMetrics');if(!root)return;
