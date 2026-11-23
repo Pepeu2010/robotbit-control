@@ -161,7 +161,7 @@
     if(next==='academy')renderLesson();
     if(next==='profiles')renderProfiles();
     if(next==='safety')refreshSafety();
-    if(next==='studio')syncStudioControls();
+    if(next==='studio')refreshVirtualLabels();
     window.scrollTo(0,0);
     log('navegação','Área: '+(tabs.find(x=>x[0]===next)||[])[1]);
   }
@@ -756,9 +756,6 @@
       return;
     }
     if(ev.target.id==='motionName'){state.recordingName=ev.target.value.slice(0,32);return;}
-  });
-  page.addEventListener('pointerdown',ev=>{
-    if(ev.target.matches('[data-virtual]'))ev.preventDefault();
   });
   controlPro.addEventListener('input',event=>{
     const id=event.target.id;
