@@ -126,3 +126,7 @@ body.studio-reduced-motion .estop,
 body.studio-reduced-motion .studio-page{animation:none!important;transition-duration:0.01ms!important}
 body.studio-theme-teal .studio-button.primary{background:linear-gradient(110deg,#90f4d8,#51bfbc);border-color:#83efd3}
 body.studio-theme-violet .studio-button.primary{background:linear-gradient(110deg,#d2b3ff,#9e9bee);border-color:#c4aff9}
+
+body.studio-left-handed.game-mode.landscape-auto .pads{direction:ltr}
+body.studio-subpage .studio-stats{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media(max-width:610px){body.studio-subpage .studio-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
