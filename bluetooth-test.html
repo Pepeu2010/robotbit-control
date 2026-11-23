@@ -1,0 +1,58 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0b1424"><title>Teste Bluetooth - Robotbit Control</title>
+<style>:root{color-scheme:dark;font-family:Inter,system-ui,sans-serif}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 80% 0%,#29446f,#0a1323 65%);color:#ecf4ff;min-height:100dvh}main{width:min(650px,100% - 30px);margin:auto;padding:30px 0}a{color:#b1ccff;font-size:12px}h1{font-size:clamp(26px,6vw,40px);letter-spacing:-1px;margin:22px 0 4px}h2{font-size:15px;margin:0 0 11px}p{font-size:12px;color:#abc1dd;line-height:1.65}section{border:1px solid #405d81;border-radius:16px;background:linear-gradient(145deg,#192b43,#101d30);padding:17px;margin:14px 0}.controls{display:flex;gap:7px;flex-wrap:wrap}button{border:1px solid #617fa7;border-radius:10px;background:#28466d;color:#dceaff;padding:11px 13px;font-weight:800;cursor:pointer}button.primary{background:#a7c4ff;color:#10213a}button:disabled{opacity:.4;cursor:default}.step{border:1px solid #35506d;border-radius:10px;margin:7px 0;padding:10px;background:#101e32;font-size:11px;line-height:1.6}.step b{color:#bcd8ff;display:block;font-size:12px}.step.ok b{color:#8af0d2}.step.fail b{color:#ffa1b6}#details{font-size:11px;line-height:1.7;color:#b8cee8;overflow-wrap:anywhere}.notice{background:#33281e;border:1px solid #765b3d;border-radius:11px;padding:12px;color:#f2d2aa;font-size:11px;line-height:1.65}</style></head>
+<body><main><a href="./">← Voltar ao Robotbit Control</a><h1>Teste de Bluetooth</h1><p>Teste isolado do Bluetooth Web e do serviço UART da micro:bit. <strong>Nenhum comando de movimento é enviado.</strong></p>
+<section><h2>1. Seu navegador</h2><div id="environment"></div></section>
+<section><h2>2. Encontrar a micro:bit</h2><p>Use Procurar micro:bit primeiro. Se ela não aparecer, use Buscar todos e selecione somente sua placa.</p><div class="controls"><button type="button" id="scan" class="primary">Procurar micro:bit</button><button type="button" id="scanAll">Buscar todos</button><button type="button" id="off" disabled>Desconectar</button></div><div id="steps"></div></section>
+<section><h2>3. Resultado técnico</h2><div id="details">Nenhum teste executado.</div></section>
+<div class="notice">No Android, abra a página no Chrome, fora do navegador interno de outros aplicativos. O Safari do iPhone não oferece Web Bluetooth nativamente: requer navegador ou extensão BLE compatível. Sem o firmware UART na micro:bit, a placa pode aparecer e mesmo assim não oferecer o serviço.</div>
+</main><script>
+(()=>{
+'use strict';
+const $=id=>document.getElementById(id),UART='6e400001-b5a3-f393-e0a9-e50e24dcca9e',RX='6e400003-b5a3-f393-e0a9-e50e24dcca9e';
+let device=null,busy=false;
+function entry(node,title,message,kind){
+const div=document.createElement('div');div.className='step '+(kind||'');
+const b=document.createElement('b');b.textContent=title;
+const detail=document.createElement('span');detail.textContent=message;
+div.append(b,detail);$(node).appendChild(div);
+}
+function refresh(){
+$('environment').replaceChildren();
+entry('environment',window.isSecureContext?'HTTPS seguro':'HTTPS necessário',location.origin,window.isSecureContext?'ok':'fail');
+const supported=!!navigator.bluetooth&&typeof navigator.bluetooth.requestDevice==='function';
+entry('environment',supported?'Web Bluetooth disponível':'Web Bluetooth indisponível',supported?'Navegador oferece Bluetooth Web.':'Abra este endereço no Chrome Android ou navegador BLE compatível.',supported?'ok':'fail');
+entry('environment','Navegador',navigator.userAgent.slice(0,150),'');
+$('scan').disabled=busy||!supported;$('scanAll').disabled=busy||!supported;$('off').disabled=busy||!device?.gatt?.connected;
+}
+async function scan(all){
+if(busy||!navigator.bluetooth?.requestDevice)return;
+busy=true;refresh();$('steps').replaceChildren();$('details').textContent='Aguardando autorização...';
+entry('steps','Seleção da placa','Autorize o navegador a acessar a micro:bit.');
+let candidate=null,stage='Seleção do dispositivo';
+try{
+const options=all?{acceptAllDevices:true,optionalServices:[UART]}:{filters:[{namePrefix:'BBC micro:bit'},{namePrefix:'micro:bit'},{services:[UART]}],optionalServices:[UART]};
+candidate=await navigator.bluetooth.requestDevice(options);
+$('steps').replaceChildren();entry('steps','Micro:bit selecionada',candidate.name||'Nome não informado','ok');
+stage='Conexão GATT';const server=await candidate.gatt.connect();entry('steps','GATT conectado','Conexão BLE estabelecida.','ok');
+stage='Serviço UART';const service=await server.getPrimaryService(UART);entry('steps','Serviço UART encontrado',UART,'ok');
+stage='Característica UART';const characteristic=await service.getCharacteristic(RX);entry('steps','Canal UART encontrado',RX,'ok');
+const p=characteristic.properties||{};
+if(!p.write&&!p.writeWithoutResponse)throw new Error('Característica não permite escrita.');
+entry('steps','UART pronto','Canal de escrita disponível. Nenhum comando foi enviado.','ok');
+$('details').textContent='Teste concluído: '+(candidate.name||'micro:bit')+' · conexão e característica UART disponíveis. Não foram testados comandos nem movimentos.';
+device=candidate;
+}catch(error){
+entry('steps','Erro em '+stage,(error?.name||'Erro')+': '+String(error?.message||error),'fail');
+$('details').textContent='Etapa: '+stage+' · Erro: '+String(error?.name||'Erro')+' · '+String(error?.message||error);
+if(candidate?.gatt?.connected)try{candidate.gatt.disconnect();}catch(e){}
+}finally{busy=false;refresh();}
+}
+$('scan').addEventListener('click',()=>scan(false));
+$('scanAll').addEventListener('click',()=>scan(true));
+$('off').addEventListener('click',()=>{if(device?.gatt?.connected)device.gatt.disconnect();device=null;$('steps').replaceChildren();entry('steps','Desconectado','Nenhum comando foi enviado.');refresh();});
+refresh();
+if(navigator.bluetooth?.getAvailability)navigator.bluetooth.getAvailability().then(available=>{
+entry('environment',available?'Bluetooth do aparelho disponível':'Bluetooth do aparelho indisponível',available?'Rádio Bluetooth acessível.':'Verifique se o Bluetooth do aparelho está ligado.',available?'ok':'fail');
+}).catch(()=>{});
+})();
+</script></body></html>
