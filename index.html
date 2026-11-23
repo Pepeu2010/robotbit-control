@@ -503,6 +503,28 @@ body.game-mode.landscape-auto .grip-section{
 }
 @media(prefers-reduced-motion:reduce){.sim-live-dot{box-shadow:none}}
 
+
+/* V5.1 — BLE recovery and actionable diagnostics */
+.ble-helper-actions{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:9px 0 0}
+.ble-mini-button{padding:7px 10px;border:1px solid #48668d;background:#152944;color:#bfd7f2;border-radius:9px;cursor:pointer;font-size:10px;font-weight:850;line-height:1.3}
+.ble-mini-button:hover{background:#284568;border-color:#83a7d4}
+.ble-mini-button[hidden],.ble-report[hidden]{display:none!important}
+.ble-report{margin-top:11px;border:1px solid #456180;border-radius:13px;background:linear-gradient(145deg,#101e31,#15293f);padding:14px}
+.ble-report-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.ble-report-head strong{font-size:12px;color:#e2f1ff}
+.ble-phase{font-weight:850;font-size:10px;color:#b0ddf0;border:1px solid #4c7190;background:#183951;padding:4px 7px;border-radius:7px}
+.ble-phase.error{color:#ffd5df;background:#4c2636;border-color:#ae5276}
+.ble-phase.success{color:#9cf9d9;background:#175044;border-color:#53b59d}
+.ble-report p{font-size:12px;color:#d6e7f5;line-height:1.65;margin:11px 0}
+.ble-details{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+.ble-detail{display:flex;gap:6px;flex-direction:column;min-width:0;padding:9px 10px;border:1px solid #304e6d;background:#101f34;border-radius:9px}
+.ble-detail span{font-size:10px;color:#8eacca}
+.ble-detail strong{font-size:11px;color:#d4e6f9;font-weight:800;line-height:1.4;overflow-wrap:anywhere}
+.ble-detail strong.warn{color:#ffd197}
+.ble-detail strong.good{color:#a8f5dc}
+.ble-report-footer{font-size:10px;color:#94afc9;margin-top:11px;line-height:1.65}
+@media(max-width:430px){.ble-details{grid-template-columns:1fr}.ble-helper-actions{gap:5px}.ble-mini-button{font-size:10px}}
+
 </style>
   <link rel="stylesheet" href="./studio.css">
   <script defer src="./studio.js"></script>
@@ -512,7 +534,7 @@ body.game-mode.landscape-auto .grip-section{
   <header class="topbar">
     <div class="brandlock">
       <div class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4v7M11 11h10l2 6-7 4-7-4 2-6Z"/><path d="M9 17 5 23l3 5 5-5M23 17l4 6-3 5-5-5"/><circle cx="16" cy="15" r="1.2" fill="currentColor"/></svg></div>
-      <div><div class="brand-name">Robotbit <span style="color:#9eb7ff">Control</span></div><div class="brand-sub">MOBILE ROBOTICS · V5.0</div></div>
+      <div><div class="brand-name">Robotbit <span style="color:#9eb7ff">Control</span></div><div class="brand-sub">MOBILE ROBOTICS · V5.1</div></div>
     </div>
     <div class="landscape-dock" id="landscapeDock" aria-label="Conexão no modo horizontal"></div>
     <div class="top-actions">
@@ -539,6 +561,17 @@ body.game-mode.landscape-auto .grip-section{
       <button type="button" class="btn secondary" id="disconnect" disabled>Sair</button>
     </div>
     <p id="device" class="device">Conecte a micro:bit. Por segurança, os controles começam bloqueados.</p>
+    <div class="ble-helper-actions" role="group" aria-label="Ferramentas Bluetooth">
+      <button type="button" id="bleCheck" class="ble-mini-button">Ver diagnóstico</button>
+      <button type="button" id="bleReconnect" class="ble-mini-button" hidden>Reconectar placa</button>
+      <button type="button" id="bleScanAll" class="ble-mini-button" hidden>Buscar outros dispositivos</button>
+    </div>
+    <section id="bleReport" class="ble-report" aria-label="Diagnóstico Bluetooth" hidden>
+      <div class="ble-report-head"><strong>Diagnóstico da conexão</strong><span id="blePhase" class="ble-phase">Aguardando</span></div>
+      <p id="bleAdvice">Toque em Ver diagnóstico para conferir o navegador e as permissões.</p>
+      <div class="ble-details" id="bleDetails"></div>
+      <div class="ble-report-footer">Confira se a micro:bit está ligada e se o programa instalado inicia o serviço Bluetooth UART. Em celulares, abra este site no navegador completo, não no navegador interno de outro aplicativo.</div>
+    </section>
   </section>
   <section aria-label="Controles da garra">
     <div class="zone-head"><div><div class="kicker">02 / LIVE CONTROLS</div><h2>Central de movimento</h2><p>Use dois dedos: um em cada joystick, ao mesmo tempo.</p></div><div class="pad-indicators"><div class="dual-badge" id="dualBadge" aria-live="polite">0 / 2 DEDOS</div><div class="live-badge" id="liveBadge">BLOQUEADO</div></div></div>
@@ -641,7 +674,7 @@ body.game-mode.landscape-auto .grip-section{
     </div>
   </section>
   <button type="button" class="estop active" id="estop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><path d="m12 3 9 16a2 2 0 0 1-1.7 3H4.7A2 2 0 0 1 3 19L12 3Z"/><path d="M12 9v5m0 4h.01"/></svg><span>CONTROLE BLOQUEADO</span></button>
-  <footer class="footer"><span><strong>ROBOTBIT CONTROL V5.0</strong> · Projetado para micro:bit + Robotbit</span><span>Parada por software: não corta a alimentação dos servos.</span></footer>
+  <footer class="footer"><span><strong>ROBOTBIT CONTROL V5.1</strong> · Projetado para micro:bit + Robotbit</span><span>Parada por software: não corta a alimentação dos servos.</span></footer>
 </main>
 
 <div class="help-overlay" id="iphoneHelpOverlay" hidden>
@@ -724,6 +757,79 @@ body.game-mode.landscape-auto .grip-section{
   });
   const textEncoder = new TextEncoder();
   let bleDevice = null, bleWrite = null, connected = false, armed = false;
+  let bleConnecting=false, bleStage='Aguardando', bleLastError=null;
+  const bleUI={report:$('bleReport'),phase:$('blePhase'),advice:$('bleAdvice'),
+    details:$('bleDetails'),check:$('bleCheck'),reconnect:$('bleReconnect'),scanAll:$('bleScanAll')};
+  const supportedBluetooth=()=>!!(navigator.bluetooth && typeof navigator.bluetooth.requestDevice==='function');
+  const bleErrorName=error=>String(error?.name||'Erro desconhecido');
+  const bleErrorDetail=error=>String(error?.message||error||'Sem detalhes').slice(0,240);
+  function reportBle(stage,advice,kind='info'){
+    bleStage=stage;
+    if(advice)bleUI.advice.textContent=advice;
+    bleUI.phase.textContent=stage;
+    bleUI.phase.className='ble-phase'+(kind==='error'?' error':kind==='success'?' success':'');
+    bleUI.report.hidden=false;
+    bleUI.reconnect.hidden=!navigator.bluetooth?.getDevices&&!bleDevice;
+  }
+  function showBleDetails(items){
+    bleUI.details.replaceChildren();
+    for(const [label,value,status] of items){
+      const div=document.createElement('div');div.className='ble-detail';
+      const a=document.createElement('span');a.textContent=label;
+      const b=document.createElement('strong');b.textContent=String(value);b.className=status||'';
+      div.append(a,b);bleUI.details.appendChild(div);
+    }
+  }
+  function environmentDetails(availability){
+    const framed=window.self!==window.top;
+    let policy='Não informado';
+    try{
+      if(document.permissionsPolicy?.allowsFeature)policy=document.permissionsPolicy.allowsFeature('bluetooth')?'Permitido':'Bloqueado';
+      else if(document.featurePolicy?.allowsFeature)policy=document.featurePolicy.allowsFeature('bluetooth')?'Permitido':'Bloqueado';
+    }catch(e){}
+    const browser=/Edg\//.test(navigator.userAgent)?'Edge':/SamsungBrowser\//.test(navigator.userAgent)?'Samsung Internet':/CriOS\//.test(navigator.userAgent)?'Chrome (iOS)':/FxiOS\//.test(navigator.userAgent)?'Firefox (iOS)':/Chrome\//.test(navigator.userAgent)?'Chrome':/Safari\//.test(navigator.userAgent)?'Safari':'Navegador integrado ou outro';
+    return [
+      ['Navegador',browser],
+      ['Web Bluetooth',supportedBluetooth()?'Disponível':'Indisponível',supportedBluetooth()?'good':'warn'],
+      ['Conexão segura',window.isSecureContext?'HTTPS / segura':'Não segura',window.isSecureContext?'good':'warn'],
+      ['Bluetooth do aparelho',availability===null?'Não verificável':availability?'Disponível':'Indisponível',availability===false?'warn':''],
+      ['Janela incorporada',framed?'Sim — abra fora do aplicativo':'Não',framed?'warn':''],
+      ['Política de permissão',policy,policy==='Bloqueado'?'warn':''],
+      ['Etapa',bleStage],
+      ['Último erro',bleLastError||'Nenhum']
+    ];
+  }
+  async function diagnoseBle(){
+    let availability=null;
+    if(navigator.bluetooth?.getAvailability)try{availability=await navigator.bluetooth.getAvailability();}catch(e){}
+    showBleDetails(environmentDetails(availability));
+    if(!window.isSecureContext){
+      reportBle('HTTPS necessário','Abra https://robotbit-control.vercel.app/ diretamente no navegador.', 'error');
+    }else if(!supportedBluetooth()){
+      const fix=isIOS?'No iPhone, o Safari não oferece Web Bluetooth nativamente. Use um navegador BLE compatível ou uma extensão Web Bluetooth habilitada.':
+        'Abra o endereço em uma aba do Google Chrome no Android (fora do navegador interno do ChatGPT, Instagram ou WhatsApp).';
+      reportBle('Navegador incompatível',fix,'error');
+    }else if(availability===false){
+      reportBle('Bluetooth indisponível','Ative o Bluetooth nas configurações do aparelho, aproxime a micro:bit e confira as permissões de localização/dispositivos próximos do navegador.','error');
+    }else if(!connected){
+      reportBle('Pronto para procurar','Bluetooth Web detectado. Use Conectar micro:bit; selecione a placa e autorize o navegador.','info');
+    }else{
+      reportBle('Conectado','A placa está conectada. Toque em Habilitar controle para enviar os movimentos.','success');
+    }
+    return availability;
+  }
+  function bleAdviceFor(error,stage){
+    const name=bleErrorName(error),message=bleErrorDetail(error);
+    if(name==='NotFoundError')return 'Seleção cancelada ou nenhuma placa encontrada. Ligue a micro:bit, mantenha-a próxima e tente novamente. Use Buscar outros dispositivos se necessário.';
+    if(name==='SecurityError')return 'Permissão do navegador bloqueada. Abra em uma aba externa do Chrome por HTTPS e permita dispositivos próximos/Bluetooth nas configurações.';
+    if(name==='NotAllowedError')return 'O acesso ao Bluetooth foi negado. Confira as permissões do site e do navegador e tente novamente.';
+    if(name==='NetworkError')return 'Falha de conexão GATT: reinicie a micro:bit e o Bluetooth do celular, afaste outros aplicativos conectados e tente reconectar.';
+    if(name==='InvalidStateError')return 'Estado Bluetooth inválido. Desconecte o dispositivo, desligue e religue o Bluetooth e selecione novamente.';
+    if(stage==='Serviço UART'||stage==='Característica UART')return 'A placa foi encontrada, mas não apresentou o serviço UART esperado. Confirme no MakeCode que o firmware inicia bluetooth.startUartService() e utilize o programa receptor, não um firmware genérico.';
+    if(message.toLowerCase().includes('gatt'))return 'Não foi possível estabelecer a conexão GATT. Reinicie a micro:bit, afaste aplicativos Bluetooth concorrentes e tente de novo.';
+    return 'Falha na etapa '+stage+'. Toque em Ver diagnóstico para conferir o navegador. Detalhe: '+message;
+  }
+  bleUI.check.addEventListener('click',diagnoseBle);
   let writeChain = Promise.resolve(), tickTimer = null, toastTimeout = null, sendingMove = false;
   let nextAxis = 0, gripOverride = 0;
   const pads = { left:{x:0,y:0,id:null}, right:{x:0,y:0,id:null} };
@@ -1079,7 +1185,7 @@ body.game-mode.landscape-auto .grip-section{
     document.body.classList.toggle('is-connected',connected);
     document.body.classList.toggle('is-armed',armed);
     ui.statusText.textContent=connected?(armed?'Controle ativo':'Conectado'):'Desconectado';
-    ui.connect.disabled=connected;ui.enable.disabled=!connected||armed;ui.disconnect.disabled=!connected;
+    ui.connect.disabled=connected||bleConnecting;ui.enable.disabled=!connected||armed;ui.disconnect.disabled=!connected||bleConnecting;
     ui.stop.classList.toggle('active',!armed);
     ui.stop.querySelector('span').textContent=armed?'PARAR E BLOQUEAR':'CONTROLE BLOQUEADO';
     $('liveBadge').textContent=armed?'MOVIMENTO ATIVO':'BLOQUEADO';
@@ -1170,33 +1276,104 @@ body.game-mode.landscape-auto .grip-section{
     if(!chosen)return;
     sendingMove=true;write(chosen).finally(()=>{sendingMove=false;});
   }
-  async function connect() {
-    if(!window.isSecureContext){ui.device.textContent='Abra o site por HTTPS (GitHub Pages).';toast('Conexão Bluetooth exige HTTPS.');return;}
-    if(!navigator.bluetooth || typeof navigator.bluetooth.requestDevice !== 'function'){
-      ui.device.textContent=isIOS?'No Safari, ative a extensão beacio (iOS 26.2+) e recarregue. Alternativa: Bluefy.':'Este navegador não oferece Web Bluetooth. No Android, use o Chrome.';
-      toast(isIOS?'Safari precisa de extensão Bluetooth. Veja as instruções acima.':'Seu navegador não suporta Bluetooth Web.');if(isIOS)showIphoneHelp();return;
+  async function connectWithDevice(device){
+    bleStage='Ligando ao GATT';
+    ui.device.textContent='Conectando à micro:bit...';
+    reportBle(bleStage,'Estabelecendo conexão Bluetooth com a placa.');
+    const server=await device.gatt.connect();
+    if(!server?.connected)throw new Error('GATT não confirmou a conexão.');
+    bleStage='Serviço UART';
+    ui.device.textContent='Conexão Bluetooth feita. Procurando o serviço UART...';
+    const service=await server.getPrimaryService(UART_SERVICE);
+    bleStage='Característica UART';
+    ui.device.textContent='UART disponível. Preparando canal de comandos...';
+    const writeChar=await service.getCharacteristic(UART_WRITE);
+    if(!writeChar)throw new Error('Canal de escrita UART ausente');
+    if(bleDevice && bleDevice!==device){
+      bleDevice.removeEventListener('gattserverdisconnected',onDisconnected);
     }
-    ui.connect.disabled=true;ui.device.textContent='Procurando micro:bit por Bluetooth...';
-    try {
-      // AcceptAllDevices evita filtros de nomes diferentes entre firmwares MakeCode.
-      const device=await navigator.bluetooth.requestDevice({acceptAllDevices:true,optionalServices:[UART_SERVICE]});
-      if(bleDevice && bleDevice!==device) bleDevice.removeEventListener('gattserverdisconnected',onDisconnected);
-      bleDevice=device;
-      bleDevice.addEventListener('gattserverdisconnected',onDisconnected);
-      const server=await device.gatt.connect();
-      const service=await server.getPrimaryService(UART_SERVICE);
-      bleWrite=await service.getCharacteristic(UART_WRITE);
-      connected=true;armed=false;resetAxes();
-      ui.device.textContent='Dispositivo: '+(device.name||'micro:bit')+'. Toque em Habilitar controle.';
-      render();toast('Conectado. Habilite para movimentar.');
-    } catch(e) {
-      console.error('Conexão BLE:',e);connected=false;bleWrite=null;armed=false;
-      const cancelled=e && e.name==='NotFoundError';
-      ui.device.textContent=cancelled?'Nenhum dispositivo selecionado. Tente conectar novamente.':(isIOS?'Falha na conexão BLE. Verifique as permissões de Bluetooth do Safari/extensão ou Bluefy e o firmware UART da micro:bit.':'Conexão não concluída. Confira o firmware BLE UART no micro:bit.');
-      toast(cancelled?'Seleção cancelada.':isIOS?'Falha na conexão Bluetooth. Confira as permissões.':'Não foi possível conectar ao serviço UART.');
-    }
-    finally{render();}
+    bleDevice=device;
+    bleDevice.removeEventListener('gattserverdisconnected',onDisconnected);
+    bleDevice.addEventListener('gattserverdisconnected',onDisconnected);
+    bleWrite=writeChar;connected=true;armed=false;bleLastError=null;
+    resetAxes();render();
+    const name=device.name||'micro:bit';
+    ui.device.textContent='Conectado a '+name+'. Toque em Habilitar controle.';
+    reportBle('Conectado','Serviço UART e característica de escrita encontrados. Agora habilite o controle.','success');
+    bleUI.scanAll.hidden=true;
+    bleUI.reconnect.hidden=typeof navigator.bluetooth?.getDevices!=='function';
+    showBleDetails(environmentDetails(true).concat([['Dispositivo',name,'good'],['UART','Serviço detectado','good']]));
+    toast('Micro:bit conectada pelo Bluetooth UART.');
   }
+  async function connect(choice='microbit'){
+    if(bleConnecting||connected)return;
+    if(!window.isSecureContext){
+      ui.device.textContent='Bluetooth Web precisa de HTTPS. Abra o site pela URL segura.';
+      reportBle('HTTPS necessário','Use https://robotbit-control.vercel.app/ no navegador completo.','error');
+      return;
+    }
+    if(!supportedBluetooth()){
+      ui.device.textContent=isIOS?'Safari sem Bluetooth Web nativo. Veja as instruções de iPhone.':'Web Bluetooth indisponível neste navegador. Abra o site no Chrome, fora de aplicativos.';
+      reportBle('API indisponível',isIOS?
+        'O Safari não suporta Web Bluetooth nativamente. Use Bluefy ou uma extensão Web Bluetooth compatível e ativa.':
+        'Abra este endereço diretamente no Chrome para Android. Navegadores embutidos em aplicativos podem não expor navigator.bluetooth.','error');
+      void diagnoseBle();
+      if(isIOS)showIphoneHelp();
+      return;
+    }
+    bleConnecting=true;
+    ui.connect.disabled=true;
+    bleStage='Seleção do dispositivo';ui.device.textContent='Procurando dispositivos Bluetooth próximos...';
+    reportBle('Selecionando','Selecione sua micro:bit. Não escolha fones, caixas de som ou outros dispositivos.');
+    let candidate=null;
+    try {
+      // Importante: requestDevice precisa ser o PRIMEIRO await após o toque.
+      const options=choice==='all'?
+        {acceptAllDevices:true,optionalServices:[UART_SERVICE]}:
+        {filters:[{namePrefix:'BBC micro:bit'},{namePrefix:'micro:bit'},{services:[UART_SERVICE]}],optionalServices:[UART_SERVICE]};
+      candidate=await navigator.bluetooth.requestDevice(options);
+      await connectWithDevice(candidate);
+    }catch(error){
+      console.error('Falha BLE na etapa '+bleStage,error);
+      connected=false;armed=false;bleWrite=null;
+      bleLastError=bleErrorName(error)+': '+bleErrorDetail(error);
+      const advice=bleAdviceFor(error,bleStage);
+      ui.device.textContent=advice;
+      reportBle('Falha: '+bleStage,advice,'error');
+      bleUI.scanAll.hidden=false;bleUI.reconnect.hidden=typeof navigator.bluetooth?.getDevices!=='function';
+      if(candidate?.gatt?.connected)try{candidate.gatt.disconnect();}catch(e){}
+      showBleDetails(environmentDetails(null));
+      toast('Bluetooth: '+(error?.name||'falha na conexão')+'. Veja diagnóstico.');
+    }finally{
+      bleConnecting=false;render();
+    }
+  }
+  async function reconnectBle(){
+    if(bleConnecting||connected)return;
+    if(!navigator.bluetooth?.getDevices){
+      reportBle('Não disponível','Este navegador não permite listar dispositivos autorizados. Toque em Conectar micro:bit.','error');
+      return;
+    }
+    bleConnecting=true;
+    ui.connect.disabled=true;
+    try{
+      const candidates=await navigator.bluetooth.getDevices();
+      const remembered=candidates.find(d=>(d.name||'').toLowerCase().includes('micro:bit'))||candidates[0];
+      if(!remembered){
+        bleUI.reconnect.hidden=true;
+        reportBle('Sem autorização anterior','Primeiro toque em Conectar micro:bit e escolha o dispositivo na janela do navegador.');
+        return;
+      }
+      await connectWithDevice(remembered);
+    }catch(error){
+      bleLastError=bleErrorName(error)+': '+bleErrorDetail(error);
+      const advice=bleAdviceFor(error,bleStage);
+      ui.device.textContent=advice;reportBle('Falha: '+bleStage,advice,'error');
+      showBleDetails(environmentDetails(null));
+    }finally{bleConnecting=false;render();}
+  }
+  bleUI.scanAll.addEventListener('click',()=>{void connect('all');});
+  bleUI.reconnect.addEventListener('click',reconnectBle);
   async function enable() {
     if(!connected)return;
     resetAxes();
@@ -1212,7 +1389,7 @@ body.game-mode.landscape-auto .grip-section{
     if(connected) await write('!');
     toast('Comandos bloqueados. Para retomar, toque em Habilitar.');
   }
-  ui.connect.addEventListener('click',connect);
+  ui.connect.addEventListener('click',()=>{void connect('microbit');});
   ui.enable.addEventListener('click',enable);
   ui.disconnect.addEventListener('click',async()=>{await stop();if(bleDevice?.gatt?.connected)bleDevice.gatt.disconnect();else onDisconnected();});
   ui.stop.addEventListener('click',stop);
@@ -1323,7 +1500,11 @@ body.game-mode.landscape-auto .grip-section{
   bindGrip('openGrip',-1);bindGrip('closeGrip',1);
   document.addEventListener('visibilitychange',()=>{if(document.hidden)stop();});
   window.addEventListener('blur',()=>{if(armed)stop();});
-  if (isIOS && !navigator.bluetooth) ui.device.textContent='Safari sem Web Bluetooth: ative a extensão beacio ou abra pelo Bluefy.';
+  if (!supportedBluetooth() && !isIOS) {
+    ui.device.textContent='Web Bluetooth não está disponível neste navegador. Abra o site no Chrome Android e toque em Ver diagnóstico.';
+    bleUI.scanAll.hidden=true;
+  }
+  if (isIOS && !navigator.bluetooth) ui.device.textContent='Safari sem Web Bluetooth: ative uma extensão compatível ou abra pelo Bluefy.';
   if (isIOS && navigator.bluetooth) ui.device.textContent='Bluetooth disponível no iPhone. Toque em Conectar ao micro:bit.';
   render();
   applyControllerLayout();
