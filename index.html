@@ -405,6 +405,55 @@ body.game-mode.landscape-auto .footer{display:none}
   body.game-mode.landscape-auto section[aria-label="Controles da garra"]{grid-template-columns:minmax(0,1fr) minmax(114px,19%) minmax(0,1fr);gap:7px}
   body.game-mode.landscape-auto .grip-key{font-size:10px}
 }
+
+/* v4.3 — thumb-fit and compact precision control */
+.landscape-console-speed{display:none}
+body.game-mode.landscape-auto .landscape-console-speed{display:block;flex:0 0 auto;min-width:0;margin-top:9px}
+body.game-mode.landscape-auto .landscape-mini-label{
+  text-align:center;font-size:8px;letter-spacing:1.25px;font-weight:850;color:#8297b7;margin-bottom:6px
+}
+body.game-mode.landscape-auto #landscapeSpeedSlot .speed-group{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin:0;gap:4px
+}
+body.game-mode.landscape-auto #landscapeSpeedSlot .speed-chip{
+  min-width:0;min-height:36px;padding:7px 1px;
+  border-radius:8px;gap:2px;background:#16263f;
+  box-shadow:inset 0 1px #ffffff0a
+}
+body.game-mode.landscape-auto #landscapeSpeedSlot .speed-chip.selected{
+  border-color:#90b3ff;background:linear-gradient(145deg,#38568d,#233967);
+  box-shadow:0 0 16px #769aff35
+}
+body.game-mode.landscape-auto #landscapeSpeedSlot .speed-chip strong{font-size:9px}
+body.game-mode.landscape-auto #landscapeSpeedSlot .speed-chip small{font-size:8px}
+body.game-mode.landscape-auto .pad-wrap{min-height:0;overflow:visible}
+body.game-mode.landscape-auto .pad{
+  width:var(--cockpit-stick-size,min(33vw,52dvh,220px));
+  height:var(--cockpit-stick-size,min(33vw,52dvh,220px));
+  max-width:none;max-height:none;min-width:0;min-height:0;
+}
+body.game-mode.landscape-auto .pad-panel{
+  overflow:visible;
+}
+body.game-mode.landscape-auto .pad-label{line-height:1.2}
+body.game-mode.landscape-auto .grip-section{
+  gap:4px;
+}
+@media(orientation:landscape) and (max-height:420px){
+  body.game-mode.landscape-auto section[aria-label="Controles da garra"]>.panel{padding:9px 8px!important}
+  body.game-mode.landscape-auto .landscape-console-speed{margin-top:5px}
+  body.game-mode.landscape-auto .landscape-mini-label{margin-bottom:4px}
+  body.game-mode.landscape-auto #landscapeSpeedSlot .speed-chip{min-height:29px;padding:4px 1px}
+  body.game-mode.landscape-auto .grip-buttons{gap:7px}
+  body.game-mode.landscape-auto .grip-key{min-height:39px;padding:5px 3px}
+}
+@media(orientation:landscape) and (max-height:340px){
+  body.game-mode.landscape-auto .landscape-console-foot{display:none}
+  body.game-mode.landscape-auto .grip-label{display:none}
+  body.game-mode.landscape-auto #landscapeSpeedSlot .speed-chip small{display:none}
+  body.game-mode.landscape-auto #landscapeSpeedSlot .speed-chip{min-height:23px}
+  body.game-mode.landscape-auto .landscape-mini-label{display:none}
+}
 </style>
 </head>
 <body>
@@ -412,7 +461,7 @@ body.game-mode.landscape-auto .footer{display:none}
   <header class="topbar">
     <div class="brandlock">
       <div class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4v7M11 11h10l2 6-7 4-7-4 2-6Z"/><path d="M9 17 5 23l3 5 5-5M23 17l4 6-3 5-5-5"/><circle cx="16" cy="15" r="1.2" fill="currentColor"/></svg></div>
-      <div><div class="brand-name">Robotbit <span style="color:#9eb7ff">Control</span></div><div class="brand-sub">MOBILE ROBOTICS · V4.2</div></div>
+      <div><div class="brand-name">Robotbit <span style="color:#9eb7ff">Control</span></div><div class="brand-sub">MOBILE ROBOTICS · V4.3</div></div>
     </div>
     <div class="landscape-dock" id="landscapeDock" aria-label="Conexão no modo horizontal"></div>
     <div class="top-actions">
@@ -458,6 +507,7 @@ body.game-mode.landscape-auto .footer{display:none}
     </div>
     <div class="panel" style="padding:16px 19px;margin-top:13px">
       <div class="landscape-console-head" aria-hidden="true"><span class="console-led"></span><span>GRIP CONTROL</span><span class="console-pin">P8</span></div>
+      <div class="landscape-console-speed" aria-label="Ajuste rápido de precisão"><div class="landscape-mini-label">PRECISÃO</div><div id="landscapeSpeedSlot"></div></div>
     <div class="grip-section"><div class="grip-label">CONTROLE RÁPIDO DA GARRA · P8</div>
         <div class="grip-buttons">
           <button class="grip-key" type="button" id="openGrip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 12H3m0 0 3-3m-3 3 3 3M14 12h7m0 0-3-3m3 3-3 3"/></svg> Abrir garra</button>
@@ -528,7 +578,7 @@ body.game-mode.landscape-auto .footer{display:none}
     </div>
   </section>
   <button type="button" class="estop active" id="estop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><path d="m12 3 9 16a2 2 0 0 1-1.7 3H4.7A2 2 0 0 1 3 19L12 3Z"/><path d="M12 9v5m0 4h.01"/></svg><span>CONTROLE BLOQUEADO</span></button>
-  <footer class="footer"><span><strong>ROBOTBIT CONTROL V4.2</strong> · Projetado para micro:bit + Robotbit</span><span>Parada por software: não corta a alimentação dos servos.</span></footer>
+  <footer class="footer"><span><strong>ROBOTBIT CONTROL V4.3</strong> · Projetado para micro:bit + Robotbit</span><span>Parada por software: não corta a alimentação dos servos.</span></footer>
 </main>
 
 <div class="help-overlay" id="iphoneHelpOverlay" hidden>
@@ -833,6 +883,35 @@ body.game-mode.landscape-auto .footer{display:none}
     return touch && window.innerWidth>window.innerHeight*1.12 &&
       window.innerHeight<=680 && landscapeQuery.matches;
   }
+
+  const speedControls=document.querySelector('.speed-group');
+  const speedHome=document.createComment('restore-speed-controls');
+  speedControls.parentNode.insertBefore(speedHome,speedControls);
+  const landscapeSpeedSlot=$('landscapeSpeedSlot');
+  let speedInConsole=false;
+  let fitSticksFrame=0;
+  function syncLandscapeSpeed(){
+    if(landscapeAuto && !speedInConsole){
+      landscapeSpeedSlot.appendChild(speedControls);
+      speedInConsole=true;
+    }else if(!landscapeAuto && speedInConsole){
+      speedHome.parentNode.insertBefore(speedControls,speedHome.nextSibling);
+      speedInConsole=false;
+    }
+  }
+  function fitSticks(){
+    if(!landscapeAuto){document.documentElement.style.removeProperty('--cockpit-stick-size');return;}
+    const wrapA=$('leftPad').parentElement.getBoundingClientRect();
+    const wrapB=$('rightPad').parentElement.getBoundingClientRect();
+    if(wrapA.height<1||wrapB.height<1)return;
+    const size=Math.floor(Math.min(wrapA.height-10,wrapB.height-10,wrapA.width-16,wrapB.width-16,230));
+    document.documentElement.style.setProperty('--cockpit-stick-size',Math.max(70,size)+'px');
+  }
+  function queueFitSticks(){
+    if(fitSticksFrame)cancelAnimationFrame(fitSticksFrame);
+    fitSticksFrame=requestAnimationFrame(()=>{fitSticksFrame=0;fitSticks();});
+  }
+
   const connectionActions=document.querySelector('.connect-actions');
   const originalConnectionParent=connectionActions.parentElement;
   const landscapeDock=$('landscapeDock');
@@ -848,6 +927,8 @@ body.game-mode.landscape-auto .footer{display:none}
     gameModeOn=manualGameMode || landscapeAuto;
     document.body.classList.toggle('game-mode',gameModeOn);
     document.body.classList.toggle('landscape-auto',landscapeAuto);
+    syncLandscapeSpeed();
+    queueFitSticks();
     lab.gameMode.setAttribute('aria-pressed',gameModeOn?'true':'false');
     lab.gameMode.textContent=gameModeOn?'Sair modo videogame':'▣ Modo videogame';
     lab.exitGameMode.hidden=!manualGameMode;
