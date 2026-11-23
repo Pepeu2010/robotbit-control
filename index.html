@@ -508,6 +508,7 @@ body.game-mode.landscape-auto .grip-section{
 .ble-helper-actions{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:9px 0 0}
 .ble-mini-button{padding:7px 10px;border:1px solid #48668d;background:#152944;color:#bfd7f2;border-radius:9px;cursor:pointer;font-size:10px;font-weight:850;line-height:1.3}
 .ble-mini-button:hover{background:#284568;border-color:#83a7d4}
+a.ble-mini-button{text-decoration:none;display:inline-flex;align-items:center}
 .ble-mini-button[hidden],.ble-report[hidden]{display:none!important}
 .ble-report{margin-top:11px;border:1px solid #456180;border-radius:13px;background:linear-gradient(145deg,#101e31,#15293f);padding:14px}
 .ble-report-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
@@ -563,6 +564,7 @@ body.game-mode.landscape-auto .grip-section{
     <p id="device" class="device">Conecte a micro:bit. Por segurança, os controles começam bloqueados.</p>
     <div class="ble-helper-actions" role="group" aria-label="Ferramentas Bluetooth">
       <button type="button" id="bleCheck" class="ble-mini-button">Ver diagnóstico</button>
+      <a class="ble-mini-button" href="./bluetooth-test.html" target="_blank" rel="noopener noreferrer">Teste Bluetooth isolado</a>
       <button type="button" id="bleReconnect" class="ble-mini-button" hidden>Reconectar placa</button>
       <button type="button" id="bleScanAll" class="ble-mini-button" hidden>Buscar outros dispositivos</button>
     </div>
@@ -769,7 +771,7 @@ body.game-mode.landscape-auto .grip-section{
     bleUI.phase.textContent=stage;
     bleUI.phase.className='ble-phase'+(kind==='error'?' error':kind==='success'?' success':'');
     bleUI.report.hidden=false;
-    bleUI.reconnect.hidden=!navigator.bluetooth?.getDevices&&!bleDevice;
+    bleUI.reconnect.hidden=typeof navigator.bluetooth?.getDevices!=='function';
   }
   function showBleDetails(items){
     bleUI.details.replaceChildren();
@@ -820,12 +822,12 @@ body.game-mode.landscape-auto .grip-section{
   }
   function bleAdviceFor(error,stage){
     const name=bleErrorName(error),message=bleErrorDetail(error);
+    if(stage==='Serviço UART'||stage==='Característica UART')return 'A placa foi encontrada, mas não apresentou o serviço UART esperado. Confirme no MakeCode que o firmware inicia bluetooth.startUartService() e utilize o programa receptor, não um firmware genérico.';
     if(name==='NotFoundError')return 'Seleção cancelada ou nenhuma placa encontrada. Ligue a micro:bit, mantenha-a próxima e tente novamente. Use Buscar outros dispositivos se necessário.';
     if(name==='SecurityError')return 'Permissão do navegador bloqueada. Abra em uma aba externa do Chrome por HTTPS e permita dispositivos próximos/Bluetooth nas configurações.';
     if(name==='NotAllowedError')return 'O acesso ao Bluetooth foi negado. Confira as permissões do site e do navegador e tente novamente.';
     if(name==='NetworkError')return 'Falha de conexão GATT: reinicie a micro:bit e o Bluetooth do celular, afaste outros aplicativos conectados e tente reconectar.';
     if(name==='InvalidStateError')return 'Estado Bluetooth inválido. Desconecte o dispositivo, desligue e religue o Bluetooth e selecione novamente.';
-    if(stage==='Serviço UART'||stage==='Característica UART')return 'A placa foi encontrada, mas não apresentou o serviço UART esperado. Confirme no MakeCode que o firmware inicia bluetooth.startUartService() e utilize o programa receptor, não um firmware genérico.';
     if(message.toLowerCase().includes('gatt'))return 'Não foi possível estabelecer a conexão GATT. Reinicie a micro:bit, afaste aplicativos Bluetooth concorrentes e tente de novo.';
     return 'Falha na etapa '+stage+'. Toque em Ver diagnóstico para conferir o navegador. Detalhe: '+message;
   }
@@ -1212,7 +1214,8 @@ body.game-mode.landscape-auto .grip-section{
   }
   function onDisconnected() {
     connected=false; armed=false; bleWrite=null; stopTicker(); resetAxes();
-    ui.device.textContent='Desconectado. Conecte e habilite novamente.';
+    ui.device.textContent='Bluetooth desconectado. Reconecte a micro:bit para continuar.';
+    reportBle('Desconectado','A placa perdeu a conexão. Ligue novamente a micro:bit e use Reconectar placa ou Conectar micro:bit.','error');
     render();toast('Bluetooth desconectado.');
   }
   async function write(code) {
