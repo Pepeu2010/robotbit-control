@@ -4,8 +4,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#080c17">
-  <meta name="description" content="Controle remoto para garra robótica com micro:bit, Robotbit e Bluetooth no Android.">
+  <meta name="description" content="Controle remoto para garra robótica com micro:bit, Robotbit e Bluetooth no Android e iPhone.">
   <title>Robotbit Control — Painel de controle</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <style>
     :root { color-scheme:dark; --bg:#080c17; --panel:#101827; --panel2:#172339; --line:#2a3952; --txt:#f4f7fd; --muted:#a4b3cd; --blue:#84a2ff; --mint:#6be5bf; --rose:#ff8290; }
     * { box-sizing:border-box; }
@@ -63,6 +65,11 @@
     .speed-number { color:var(--mint); background:#12372e; padding:9px 12px; border-radius:10px; font-size:14px; font-weight:850; min-width:56px; text-align:center; }
     .estop { width:100%; border-radius:15px; border:1px solid #b45166; background:linear-gradient(150deg,#7a293c,#4c1828); min-height:66px; font-weight:850; color:#fff; font-size:16px; margin-top:16px; }
     .estop.active { background:#194c3c; border-color:#469a79; }
+    .ios-guide { display:none; margin:13px 0 2px; background:#122b39; border:1px solid #3c877c; border-radius:13px; padding:13px 14px; color:#d9fff4; font-size:12px; line-height:1.6; }
+    .ios .ios-guide { display:block; }
+    .ios-guide strong { display:block; margin-bottom:3px; color:#fff; font-size:13px; }
+    .ios-guide a { color:#9ed9ff; text-decoration:underline; text-underline-offset:2px; }
+    .pad,.grip-buttons button { -webkit-touch-callout:none; }
     .footer { font-size:11px; line-height:1.5; color:#8192ad; margin:18px 5px 0; text-align:center; }
     .snackbar { position:fixed; z-index:99; left:50%; transform:translate(-50%,12px); bottom:calc(18px + env(safe-area-inset-bottom)); background:#20314e; border:1px solid #5976a9; border-radius:12px; box-shadow:0 14px 40px #000a; padding:13px 16px; min-width:180px; max-width:calc(100vw - 26px); color:#f7faff; font-size:13px; opacity:0; pointer-events:none; transition:opacity .16s,transform .16s; }
     .snackbar.visible { opacity:1; transform:translate(-50%,0); }
@@ -78,12 +85,13 @@
   </header>
   <div class="heading">
     <div><h2>Controle na<br>palma da mão.</h2><p>Micro:bit + Robotbit • 4 servos • Bluetooth BLE</p></div>
-    <span class="version">V2.0</span>
+    <span class="version">V2.1</span>
   </div>
 
   <section class="panel" aria-label="Conexão">
     <h3><small>01 /</small> Conexão sem fio</h3>
-    <p class="caption">Chrome no Android • Site hospedado em HTTPS</p>
+    <p id="platformHint" class="caption">Chrome no Android • Bluefy no iPhone • HTTPS</p>
+    <div class="ios-guide" id="iosGuide" role="note"><strong>Controle pelo iPhone</strong>O Safari e o Chrome do iPhone não permitem Web Bluetooth diretamente. Instale <a href="https://apps.apple.com/br/app/bluefy-web-ble-browser/id1492822055" target="_blank" rel="noopener noreferrer">Bluefy (App Store)</a>, abra <strong style="display:inline;font-size:inherit">este mesmo site</strong> dentro do Bluefy e toque em “Conectar ao micro:bit”. Ligue o Bluetooth e autorize o acesso quando solicitado. Não é necessário parear pelo Ajustes do iPhone se o firmware estiver no modo sem pareamento.</div>
     <div class="actions">
       <button type="button" id="connect" class="btn primary">Conectar ao micro:bit</button>
       <button type="button" id="enable" class="btn safe" disabled>Habilitar controle</button>
@@ -131,6 +139,8 @@
   const UART_SERVICE = '6e400001-b5a3-f393-e0a9-e50e24dcca9e';
   const UART_WRITE = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
   const $ = id => document.getElementById(id);
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  if (isIOS) document.documentElement.classList.add('ios');
   const ui = { status:$('status'), statusText:$('statusText'), connect:$('connect'), enable:$('enable'), disconnect:$('disconnect'), device:$('device'), leftX:$('leftX'),leftY:$('leftY'),rightX:$('rightX'),rightY:$('rightY'), speed:$('speed'),speedValue:$('speedValue'), leftPad:$('leftPad'),rightPad:$('rightPad'),leftNub:$('leftNub'),rightNub:$('rightNub'), openGrip:$('openGrip'),closeGrip:$('closeGrip'),stop:$('estop'),toast:$('toast') };
   const textEncoder = new TextEncoder();
   let bleDevice = null, bleWrite = null, connected = false, armed = false;
@@ -170,8 +180,9 @@
     const op = writeChain.then(async()=>{
       if (!connected || !bleWrite) return false;
       const data = textEncoder.encode(code+'\n');
-      if (bleWrite.properties.writeWithoutResponse && bleWrite.writeValueWithoutResponse) await bleWrite.writeValueWithoutResponse(data);
-      else if (bleWrite.writeValueWithResponse) await bleWrite.writeValueWithResponse(data);
+      const props = bleWrite.properties || {};
+      if (props.writeWithoutResponse && typeof bleWrite.writeValueWithoutResponse === 'function') await bleWrite.writeValueWithoutResponse(data);
+      else if (typeof bleWrite.writeValueWithResponse === 'function') await bleWrite.writeValueWithResponse(data);
       else await bleWrite.writeValue(data);
       return true;
     });
@@ -196,7 +207,11 @@
     write(chosen).finally(()=>{sendingMove=false;});
   }
   async function connect() {
-    if(!window.isSecureContext||!navigator.bluetooth){toast('Abra pelo Chrome Android, em HTTPS (GitHub Pages).');return;}
+    if(!window.isSecureContext){ui.device.textContent='Abra o site por HTTPS (GitHub Pages).';toast('Conexão Bluetooth exige HTTPS.');return;}
+    if(!navigator.bluetooth || typeof navigator.bluetooth.requestDevice !== 'function'){
+      ui.device.textContent=isIOS?'No iPhone, instale o Bluefy e abra este site dentro dele. Safari e Chrome iOS não suportam Web Bluetooth.':'Este navegador não oferece Web Bluetooth. No Android, use o Chrome.';
+      toast(isIOS?'No iPhone, abra o site no Bluefy.':'Seu navegador não suporta Bluetooth Web.');return;
+    }
     ui.connect.disabled=true;ui.device.textContent='Procurando micro:bit por Bluetooth...';
     try {
       // AcceptAllDevices evita filtros de nomes diferentes entre firmwares MakeCode.
@@ -210,7 +225,12 @@
       connected=true;armed=false;resetAxes();
       ui.device.textContent='Dispositivo: '+(device.name||'micro:bit')+'. Toque em Habilitar controle.';
       render();toast('Conectado. Habilite para movimentar.');
-    } catch(e) {console.error('Conexão BLE:',e);connected=false;bleWrite=null;armed=false;ui.device.textContent='Conexão não concluída. Confira o firmware BLE UART no micro:bit.';toast(e.name==='NotFoundError'?'Seleção cancelada.':'Não foi possível conectar ao serviço UART.');}
+    } catch(e) {
+      console.error('Conexão BLE:',e);connected=false;bleWrite=null;armed=false;
+      const cancelled=e && e.name==='NotFoundError';
+      ui.device.textContent=cancelled?'Nenhum dispositivo selecionado. Tente conectar novamente.':(isIOS?'Falha ao conectar pelo Bluefy. Verifique Bluetooth, permissão do app e firmware UART da micro:bit.':'Conexão não concluída. Confira o firmware BLE UART no micro:bit.');
+      toast(cancelled?'Seleção cancelada.':isIOS?'Falha no Bluetooth do Bluefy. Confira as permissões.':'Não foi possível conectar ao serviço UART.');
+    }
     finally{render();}
   }
   async function enable() {
@@ -264,6 +284,7 @@
   bindGrip('openGrip',-1);bindGrip('closeGrip',1);
   document.addEventListener('visibilitychange',()=>{if(document.hidden)stop();});
   window.addEventListener('blur',()=>{if(armed)stop();});
+  if (isIOS && !navigator.bluetooth) ui.device.textContent='No iPhone, use o Bluefy para se conectar. Abra este site no navegador Bluefy.';
   render();
 })();
 </script>
