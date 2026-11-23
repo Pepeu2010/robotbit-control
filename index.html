@@ -1276,7 +1276,7 @@ const buttons={
   iso:document.getElementById('viewIso'),
   front:document.getElementById('viewFront')
 };
-let startPromise=null,engine=null;
+let startPromise=null,engine=null,requestedCamera='iso';
 let requestedSteps=(window.robotbitPreviewSteps||[0,0,0,0]).slice();
 function setStatus(value){status.textContent=value;}
 function selectedCamera(which){
@@ -1291,7 +1291,7 @@ async function initThree(){
     let renderer=null;
     try{
       setStatus('CARREGANDO THREE.JS…');
-      const [{default:unused,...THREE}, {OrbitControls}, {RoundedBoxGeometry}]=await Promise.all([
+      const [THREE, {OrbitControls}, {RoundedBoxGeometry}]=await Promise.all([
         import('three'),
         import('three/addons/controls/OrbitControls.js'),
         import('three/addons/geometries/RoundedBoxGeometry.js')
@@ -1487,7 +1487,7 @@ async function initThree(){
         targets.wrist=THREE.MathUtils.clamp((Number(steps[2])||0)/32,-1,1)*-.20;
         targets.jaw=.31-THREE.MathUtils.clamp((Number(steps[3])||0)/32,-1,1)*.15;
       }
-      let alive=true,frame=0,lastW=0,lastH=0;
+      let alive=true,frame=0,pausedTick=0,lastW=0,lastH=0;
       function resize(){
         const w=Math.floor(host.clientWidth),h=Math.floor(host.clientHeight);
         if(!w||!h)return;
@@ -1500,13 +1500,13 @@ async function initThree(){
       const clock=new THREE.Clock();
       function step(){
         if(!alive)return;
-        frame=requestAnimationFrame(step);
         const visible=!document.hidden&&stage.getClientRects().length>0&&
           getComputedStyle(stage).visibility!=='hidden'&&
           !document.body.classList.contains('game-mode')&&
           stage.getBoundingClientRect().bottom>=-100&&
           stage.getBoundingClientRect().top<=innerHeight+100;
-        if(!visible)return;
+        if(!visible){pausedTick=setTimeout(step,260);return;}
+        frame=requestAnimationFrame(step);
         resize();
         const t=Math.min(clock.getDelta(),.06);
         const alpha=1-Math.exp(-7.2*t);
@@ -1534,7 +1534,7 @@ async function initThree(){
           resize();renderer.render(scene,camera);
         },
         dispose(){
-          alive=false;cancelAnimationFrame(frame);
+          alive=false;cancelAnimationFrame(frame);clearTimeout(pausedTick);
           controls.dispose();renderer.dispose();
           scene.traverse(node=>{
             if(node.isMesh&&node.geometry)node.geometry.dispose();
@@ -1543,6 +1543,7 @@ async function initThree(){
         }
       };
       engine.setSteps(requestedSteps);
+      engine.cameraPreset(requestedCamera);
       stage.classList.add('three-active');
       setStatus('THREE.JS · MODELO 3D');
       resize();clock.start();requestAnimationFrame(step);
@@ -1566,7 +1567,7 @@ window.robotbit3D={
     if(engine)engine.setSteps(requestedSteps);
   },
   resize(){if(engine)engine.resize();},
-  cameraPreset(name){if(engine)engine.cameraPreset(name);else void initThree();}
+  cameraPreset(name){requestedCamera=name==='front'?'front':'iso';selectedCamera(requestedCamera);if(engine)engine.cameraPreset(requestedCamera);else void initThree();}
 };
 const observer=new IntersectionObserver(entries=>{
   if(entries.some(e=>e.isIntersecting)&&
