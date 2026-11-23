@@ -210,7 +210,7 @@
     return '';
   }
   function studioMarkup(){
-    return heading('02 / ROBOTICS VISUAL STUDIO','Laboratório 3D','Experimente a garra virtual, explore a câmera e teste cada articulação sem conectar o robô.','SIMULAÇÃO OFFLINE*')+
+    return heading('02 / ROBOTICS VISUAL STUDIO','Laboratório 3D','Experimente a garra virtual, explore a câmera e teste cada articulação sem conectar o robô.','SEM BLUETOOTH')+
     '<div class="studio-grid"><div class="studio-card"><div class="studio-row between" style="margin-bottom:10px"><h3>Gêmeo digital ilustrativo</h3>'+
     '<span class="studio-tag">THREE.JS</span></div><div id="studioPreviewSlot" class="studio-preview-mount"></div>'+
     '<div class="studio-shelf" style="margin-top:10px">'+
@@ -242,6 +242,7 @@
     '<label class="studio-field" style="flex:1"><span class="studio-label">Nome</span><input class="studio-input" id="motionName" maxlength="32" value="'+escapeHTML(state.recordingName)+'"></label></div>'+
     '<div id="motionTimeline" class="studio-timeline" aria-label="Sequência de comandos"></div>'+
     '<div class="studio-row">'+
+    button('← Antes','motion-earlier','sm')+button('Depois →','motion-later','sm')+
     button('Remover selecionado','delete-step','sm')+button('Limpar','clear-motion','sm')+
     button('Exportar JSON','export-motion','sm')+button('Importar JSON','import-motion','sm')+
     '<input type="file" id="motionFile" accept=".json,application/json" hidden></div>'+
@@ -609,6 +610,9 @@
         $('lessonFeedback').textContent='Correto! Progresso salvo neste navegador.';
         const button=page.querySelector('[data-lesson="'+state.lesson+'"] span:last-child');
         if(button)button.textContent='✓ Concluída';
+        const score=Object.values(state.academy).filter(Boolean).length;
+        const bar=page.querySelector('.studio-progress>div');
+        if(bar)bar.style.width=(100*score/lessons.length)+'%';
       }else $('lessonFeedback').textContent='Ainda não. Leia a explicação e tente outra alternativa.';
       return;
     }
@@ -643,6 +647,16 @@
     if(action==='rec-toggle'){toggleRecording();return;}
     if(action==='play-motion'){await playMotion();return;}
     if(action==='stop-motion'){cancelPlayback();notice('Reprodução interrompida.');return;}
+    if(action==='motion-earlier'||action==='motion-later'){
+      const i=state.selection,j=i+(action==='motion-earlier'?-1:1);
+      if(i>=0&&j>=0&&j<state.events.length){
+        const a=state.events[i],b=state.events[j];
+        const aPayload={code:a.code,speed:a.speed,source:a.source};
+        a.code=b.code;a.speed=b.speed;a.source=b.source;
+        b.code=aPayload.code;b.speed=aPayload.speed;b.source=aPayload.source;
+        state.selection=j;renderTimeline();
+      }return;
+    }
     if(action==='delete-step'){
       if(state.selection>=0&&state.selection<state.events.length){
         state.events.splice(state.selection,1);state.selection=-1;renderTimeline();
