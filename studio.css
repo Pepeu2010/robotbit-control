@@ -109,3 +109,20 @@ body.studio-theme-teal .studio-nav button[aria-current="page"]{background:linear
 @media(max-width:420px){.studio-card{padding:14px}.studio-three,.studio-stats{grid-template-columns:repeat(2,1fr)}.studio-preview-mount .sim-screen{height:290px!important}.studio-heading h2{font-size:25px}.studio-virtual-controls{gap:6px}.studio-fab{right:10px;bottom:10px}}
 @keyframes studioEnter{from{opacity:.5;transform:translateY(7px)}to{opacity:1;transform:none}}
 @media(prefers-reduced-motion:reduce){.studio-page{animation:none}}
+
+/* Application modes and accessible customization */
+body.game-mode #studioControlMount,
+body.studio-subpage:not(.game-mode) #studioControlMount{display:none!important}
+body.studio-left-handed .pads{direction:rtl}
+body.studio-left-handed .pads>.pad-panel{direction:ltr}
+body.studio-left-handed.game-mode.landscape-auto .pads>.pad-panel:first-child{grid-column:3!important}
+body.studio-left-handed.game-mode.landscape-auto .pads>.pad-panel:last-child{grid-column:1!important}
+body.studio-left-handed.game-mode.landscape-auto section[aria-label="Controles da garra"]>.panel{grid-column:2}
+body.studio-reduced-motion .core-orbit,
+body.studio-reduced-motion .core-shape,
+body.studio-reduced-motion .core-halo,
+body.studio-reduced-motion .pad-ring,
+body.studio-reduced-motion .estop,
+body.studio-reduced-motion .studio-page{animation:none!important;transition-duration:0.01ms!important}
+body.studio-theme-teal .studio-button.primary{background:linear-gradient(110deg,#90f4d8,#51bfbc);border-color:#83efd3}
+body.studio-theme-violet .studio-button.primary{background:linear-gradient(110deg,#d2b3ff,#9e9bee);border-color:#c4aff9}
