@@ -66,7 +66,7 @@
     .estop { width:100%; border-radius:15px; border:1px solid #b45166; background:linear-gradient(150deg,#7a293c,#4c1828); min-height:66px; font-weight:850; color:#fff; font-size:16px; margin-top:16px; }
     .estop.active { background:#194c3c; border-color:#469a79; }
     .ios-guide { display:none; margin:13px 0 2px; background:#122b39; border:1px solid #3c877c; border-radius:13px; padding:13px 14px; color:#d9fff4; font-size:12px; line-height:1.6; }
-    .ios .ios-guide { display:block; }
+    .ios.needs-ble-extension .ios-guide { display:block; }
     .ios-guide strong { display:block; margin-bottom:3px; color:#fff; font-size:13px; }
     .ios-guide a { color:#9ed9ff; text-decoration:underline; text-underline-offset:2px; }
     .pad,.grip-buttons button { -webkit-touch-callout:none; }
@@ -85,13 +85,13 @@
   </header>
   <div class="heading">
     <div><h2>Controle na<br>palma da mão.</h2><p>Micro:bit + Robotbit • 4 servos • Bluetooth BLE</p></div>
-    <span class="version">V2.1</span>
+    <span class="version">V2.2</span>
   </div>
 
   <section class="panel" aria-label="Conexão">
     <h3><small>01 /</small> Conexão sem fio</h3>
-    <p id="platformHint" class="caption">Chrome no Android • Bluefy no iPhone • HTTPS</p>
-    <div class="ios-guide" id="iosGuide" role="note"><strong>Controle pelo iPhone</strong>O Safari e o Chrome do iPhone não permitem Web Bluetooth diretamente. Instale <a href="https://apps.apple.com/br/app/bluefy-web-ble-browser/id1492822055" target="_blank" rel="noopener noreferrer">Bluefy (App Store)</a>, abra <strong style="display:inline;font-size:inherit">este mesmo site</strong> dentro do Bluefy e toque em “Conectar ao micro:bit”. Ligue o Bluetooth e autorize o acesso quando solicitado. Não é necessário parear pelo Ajustes do iPhone se o firmware estiver no modo sem pareamento.</div>
+    <p id="platformHint" class="caption">Android: Chrome • iPhone: Safari com extensão BLE ou Bluefy • HTTPS</p>
+    <div class="ios-guide" id="iosGuide" role="note"><strong>Habilitar Bluetooth no Safari</strong>O Safari do iPhone não inclui Web Bluetooth nativamente. Para conectar por esta página, instale a extensão gratuita <a href="https://apps.apple.com/br/app/beacio/id6761301368" target="_blank" rel="noopener noreferrer">beacio (iOS 26.2 ou superior)</a>, ative-a em <strong style="display:inline;font-size:inherit">Ajustes → Apps → Safari → Extensões</strong> e autorize seu uso neste site. Recarregue a página e toque em “Conectar ao micro:bit”. Em versões anteriores do iOS, use o <a href="https://apps.apple.com/br/app/bluefy-web-ble-browser/id1492822055" target="_blank" rel="noopener noreferrer">Bluefy</a> como alternativa.</div>
     <div class="actions">
       <button type="button" id="connect" class="btn primary">Conectar ao micro:bit</button>
       <button type="button" id="enable" class="btn safe" disabled>Habilitar controle</button>
@@ -140,7 +140,10 @@
   const UART_WRITE = '6e400003-b5a3-f393-e0a9-e50e24dcca9e';
   const $ = id => document.getElementById(id);
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  if (isIOS) document.documentElement.classList.add('ios');
+  if (isIOS) {
+    document.documentElement.classList.add('ios');
+    if (!navigator.bluetooth) document.documentElement.classList.add('needs-ble-extension');
+  }
   const ui = { status:$('status'), statusText:$('statusText'), connect:$('connect'), enable:$('enable'), disconnect:$('disconnect'), device:$('device'), leftX:$('leftX'),leftY:$('leftY'),rightX:$('rightX'),rightY:$('rightY'), speed:$('speed'),speedValue:$('speedValue'), leftPad:$('leftPad'),rightPad:$('rightPad'),leftNub:$('leftNub'),rightNub:$('rightNub'), openGrip:$('openGrip'),closeGrip:$('closeGrip'),stop:$('estop'),toast:$('toast') };
   const textEncoder = new TextEncoder();
   let bleDevice = null, bleWrite = null, connected = false, armed = false;
@@ -209,8 +212,8 @@
   async function connect() {
     if(!window.isSecureContext){ui.device.textContent='Abra o site por HTTPS (GitHub Pages).';toast('Conexão Bluetooth exige HTTPS.');return;}
     if(!navigator.bluetooth || typeof navigator.bluetooth.requestDevice !== 'function'){
-      ui.device.textContent=isIOS?'No iPhone, instale o Bluefy e abra este site dentro dele. Safari e Chrome iOS não suportam Web Bluetooth.':'Este navegador não oferece Web Bluetooth. No Android, use o Chrome.';
-      toast(isIOS?'No iPhone, abra o site no Bluefy.':'Seu navegador não suporta Bluetooth Web.');return;
+      ui.device.textContent=isIOS?'No Safari, ative a extensão beacio (iOS 26.2+) e recarregue. Alternativa: Bluefy.':'Este navegador não oferece Web Bluetooth. No Android, use o Chrome.';
+      toast(isIOS?'Safari precisa de extensão Bluetooth. Veja as instruções acima.':'Seu navegador não suporta Bluetooth Web.');return;
     }
     ui.connect.disabled=true;ui.device.textContent='Procurando micro:bit por Bluetooth...';
     try {
@@ -228,8 +231,8 @@
     } catch(e) {
       console.error('Conexão BLE:',e);connected=false;bleWrite=null;armed=false;
       const cancelled=e && e.name==='NotFoundError';
-      ui.device.textContent=cancelled?'Nenhum dispositivo selecionado. Tente conectar novamente.':(isIOS?'Falha ao conectar pelo Bluefy. Verifique Bluetooth, permissão do app e firmware UART da micro:bit.':'Conexão não concluída. Confira o firmware BLE UART no micro:bit.');
-      toast(cancelled?'Seleção cancelada.':isIOS?'Falha no Bluetooth do Bluefy. Confira as permissões.':'Não foi possível conectar ao serviço UART.');
+      ui.device.textContent=cancelled?'Nenhum dispositivo selecionado. Tente conectar novamente.':(isIOS?'Falha na conexão BLE. Verifique as permissões de Bluetooth do Safari/extensão ou Bluefy e o firmware UART da micro:bit.':'Conexão não concluída. Confira o firmware BLE UART no micro:bit.');
+      toast(cancelled?'Seleção cancelada.':isIOS?'Falha na conexão Bluetooth. Confira as permissões.':'Não foi possível conectar ao serviço UART.');
     }
     finally{render();}
   }
@@ -284,7 +287,8 @@
   bindGrip('openGrip',-1);bindGrip('closeGrip',1);
   document.addEventListener('visibilitychange',()=>{if(document.hidden)stop();});
   window.addEventListener('blur',()=>{if(armed)stop();});
-  if (isIOS && !navigator.bluetooth) ui.device.textContent='No iPhone, use o Bluefy para se conectar. Abra este site no navegador Bluefy.';
+  if (isIOS && !navigator.bluetooth) ui.device.textContent='Safari sem Web Bluetooth: ative a extensão beacio ou abra pelo Bluefy.';
+  if (isIOS && navigator.bluetooth) ui.device.textContent='Bluetooth disponível no iPhone. Toque em Conectar ao micro:bit.';
   render();
 })();
 </script>
