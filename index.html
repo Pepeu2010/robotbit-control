@@ -1258,5 +1258,325 @@ body.game-mode.landscape-auto .grip-section{
   if (isIOS && !savedHelpChoice()) showIphoneHelp();
 })();
 </script>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.187.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.187.0/examples/jsm/"
+  }
+}
+</script>
+<script type="module">
+/* Procedural articulated desktop robot. Commands are estimates, not servo telemetry. */
+const stage=document.getElementById('armStage');
+const host=document.getElementById('arm3dHost');
+const status=document.getElementById('arm3dStatus');
+const buttons={
+  iso:document.getElementById('viewIso'),
+  front:document.getElementById('viewFront')
+};
+let startPromise=null,engine=null;
+let requestedSteps=(window.robotbitPreviewSteps||[0,0,0,0]).slice();
+function setStatus(value){status.textContent=value;}
+function selectedCamera(which){
+  buttons.iso.classList.toggle('selected',which==='iso');
+  buttons.front.classList.toggle('selected',which==='front');
+  buttons.iso.setAttribute('aria-pressed',String(which==='iso'));
+  buttons.front.setAttribute('aria-pressed',String(which==='front'));
+}
+async function initThree(){
+  if(startPromise)return startPromise;
+  startPromise=(async()=>{
+    let renderer=null;
+    try{
+      setStatus('CARREGANDO THREE.JS…');
+      const [{default:unused,...THREE}, {OrbitControls}, {RoundedBoxGeometry}]=await Promise.all([
+        import('three'),
+        import('three/addons/controls/OrbitControls.js'),
+        import('three/addons/geometries/RoundedBoxGeometry.js')
+      ]);
+      // A 2D fallback remains visible if there is no WebGL context.
+      const canvas=document.createElement('canvas');
+      renderer=new THREE.WebGLRenderer({
+        canvas,antialias:true,alpha:true,powerPreference:'low-power',
+        stencil:false,preserveDrawingBuffer:false
+      });
+      renderer.outputColorSpace=THREE.SRGBColorSpace;
+      renderer.toneMapping=THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure=1.40;
+      renderer.shadowMap.enabled=true;
+      renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.65));
+      host.appendChild(renderer.domElement);
+      const scene=new THREE.Scene();
+      scene.fog=new THREE.FogExp2(0x0a1527,.048);
+      const camera=new THREE.PerspectiveCamera(38,1,.1,60);
+      camera.position.set(4.35,3.45,5.45);
+      const controls=new OrbitControls(camera,renderer.domElement);
+      controls.enableDamping=true;
+      controls.dampingFactor=.072;
+      controls.enablePan=false;
+      controls.minDistance=3.1;
+      controls.maxDistance=8.6;
+      controls.minPolarAngle=.12;
+      controls.maxPolarAngle=1.64;
+      controls.target.set(0,1.45,0);
+      controls.autoRotate=!matchMedia('(prefers-reduced-motion: reduce)').matches;
+      controls.autoRotateSpeed=.36;
+      controls.rotateSpeed=.65;
+      controls.zoomSpeed=.85;
+      controls.addEventListener('start',()=>controls.autoRotate=false);
+      controls.update();
+
+      scene.add(new THREE.HemisphereLight(0xbccfff,0x142238,2.0));
+      const key=new THREE.DirectionalLight(0xfff4df,3.1);
+      key.position.set(3.4,6.1,4.1);
+      key.castShadow=true;
+      key.shadow.mapSize.set(1024,1024);
+      key.shadow.bias=-.00035;
+      key.shadow.normalBias=.04;
+      key.shadow.camera.left=-5;
+      key.shadow.camera.right=5;
+      key.shadow.camera.top=6;
+      key.shadow.camera.bottom=-5;
+      scene.add(key);
+      const fill=new THREE.PointLight(0x6299ff,24,8);
+      fill.position.set(-3,3.1,2);scene.add(fill);
+      const rim=new THREE.PointLight(0x48efd5,19,7);
+      rim.position.set(2,2.5,-3);scene.add(rim);
+
+      const dark=new THREE.MeshStandardMaterial({color:0x17273e,metalness:.75,roughness:.31});
+      const carbon=new THREE.MeshStandardMaterial({color:0x0d1d31,metalness:.34,roughness:.6});
+      const metal=new THREE.MeshStandardMaterial({color:0xb6c9e2,metalness:.82,roughness:.26});
+      const silver=new THREE.MeshStandardMaterial({color:0x809bb9,metalness:.8,roughness:.31});
+      const steel=new THREE.MeshStandardMaterial({color:0x4a647d,metalness:.85,roughness:.37});
+      const royal=new THREE.MeshStandardMaterial({color:0x4167b9,metalness:.60,roughness:.27});
+      const mint=new THREE.MeshStandardMaterial({color:0x3cbfae,metalness:.45,roughness:.32});
+      const rubber=new THREE.MeshStandardMaterial({color:0x132638,metalness:.10,roughness:.82});
+      const glow=new THREE.MeshStandardMaterial({color:0x5df6d9,emissive:0x39c3ae,emissiveIntensity:2.3,roughness:.38});
+      const blueGlow=new THREE.MeshStandardMaterial({color:0x84b7ff,emissive:0x4b8eff,emissiveIntensity:1.65,roughness:.4});
+      const materials=[dark,carbon,metal,silver,steel,royal,mint,rubber,glow,blueGlow];
+      function add(parent,geometry,mat,pos=[0,0,0],rot=[0,0,0]){
+        const mesh=new THREE.Mesh(geometry,mat);
+        mesh.position.set(...pos);mesh.rotation.set(...rot);
+        mesh.castShadow=true;mesh.receiveShadow=true;parent.add(mesh);
+        return mesh;
+      }
+      function box(parent,w,h,d,mat,pos,round=.035,rot){
+        return add(parent,new RoundedBoxGeometry(w,h,d,3,Math.min(round,w*.34,h*.34,d*.34)),mat,pos,rot);
+      }
+      function cy(parent,rt,rb,h,mat,pos,rot){
+        return add(parent,new THREE.CylinderGeometry(rt,rb,h,32,1),mat,pos,rot);
+      }
+      function ball(parent,r,mat,pos){
+        return add(parent,new THREE.SphereGeometry(r,18,12),mat,pos);
+      }
+      function ring(parent,r,tube,mat,pos,rot){
+        return add(parent,new THREE.TorusGeometry(r,tube,9,64),mat,pos,rot);
+      }
+      function screw(parent,x,y,z,scale=.018){
+        cy(parent,scale,scale,scale*.7,metal,[x,y,z],[Math.PI/2,0,0]);
+      }
+      const floor=add(scene,new THREE.PlaneGeometry(20,20),
+        new THREE.MeshStandardMaterial({color:0x0b1629,metalness:.15,roughness:.95,transparent:true,opacity:.80}),
+        [0,-.16,0],[-Math.PI/2,0,0]);
+      floor.castShadow=false;
+      const grid=new THREE.GridHelper(8,24,0x49729c,0x345071);
+      grid.position.y=-.145;
+      grid.material.opacity=.17;grid.material.transparent=true;
+      scene.add(grid);
+
+      const floorGlow=ring(scene,.89,.008,blueGlow,[0,-.13,0],[Math.PI/2,0,0]);
+      floorGlow.castShadow=false;
+      const floorGlow2=ring(scene,1.21,.005,mint,[0,-.135,0],[Math.PI/2,0,0]);
+      floorGlow2.castShadow=false;
+      // Base platform with bolt feet and a rotating turret.
+      const base=new THREE.Group();scene.add(base);
+      box(base,1.4,.13,.88,carbon,[0,-.045,0],.055);
+      box(base,1.24,.085,.72,dark,[0,.065,0],.04);
+      for(const x of [-.51,.51]){
+        for(const z of [-.29,.29]){
+          cy(base,.044,.044,.03,steel,[x,.108,z]);
+          cy(base,.018,.018,.008,metal,[x,.125,z]);
+          box(base,.12,.055,.12,rubber,[x,-.12,z],.015);
+        }
+      }
+      const yawRig=new THREE.Group();yawRig.position.y=.125;base.add(yawRig);
+      cy(yawRig,.375,.385,.18,dark,[0,.01,0]);
+      cy(yawRig,.345,.345,.045,steel,[0,.118,0]);
+      cy(yawRig,.28,.28,.045,silver,[0,.15,0]);
+      cy(yawRig,.19,.19,.10,royal,[0,.215,0]);
+      ring(yawRig,.34,.018,blueGlow,[0,.139,0],[Math.PI/2,0,0]);
+      for(let a=0;a<8;a++){
+        const angle=(a/8)*Math.PI*2;
+        ball(yawRig,.024,metal,[Math.cos(angle)*.31,.17,Math.sin(angle)*.31]);
+      }
+      // Fixed base-housing above swivel.
+      box(yawRig,.54,.34,.51,dark,[0,.38,0],.09);
+      box(yawRig,.31,.21,.54,steel,[0,.42,.0],.05);
+      for(const z of [-.265,.265]){
+        cy(yawRig,.095,.095,.022,silver,[0,.43,z],[Math.PI/2,0,0]);
+        ring(yawRig,.065,.011,blueGlow,[0,.43,z+(z>0?.014:-.014)]);
+      }
+      const shoulder=new THREE.Group();
+      shoulder.position.set(0,.59,0);
+      yawRig.add(shoulder);
+      // Shoulder motor and braces
+      for(const z of [-.23,.23]){
+        cy(shoulder,.195,.195,.075,steel,[0,0,z],[Math.PI/2,0,0]);
+        cy(shoulder,.105,.105,.08,royal,[0,0,z+(z>0?.035:-.035)],[Math.PI/2,0,0]);
+        ring(shoulder,.082,.014,blueGlow,[0,0,z+(z>0?.083:-.083)]);
+      }
+      for(const z of [-.17,.17]){
+        box(shoulder,.19,1.06,.13,metal,[0,.54,z],.045);
+        box(shoulder,.145,.87,.14,dark,[0,.55,z],.043);
+        box(shoulder,.085,.49,.15,royal,[0,.51,z],.027);
+        for(const y of [.2,.83])screw(shoulder,0,y,z+(z>0?.084:-.084),.019);
+      }
+      box(shoulder,.33,.33,.29,carbon,[0,.63,0],.045);
+      box(shoulder,.37,.07,.41,mint,[0,.74,0],.025);
+      // Elbow and forearm pivot.
+      const elbow=new THREE.Group();elbow.position.set(0,1.08,0);shoulder.add(elbow);
+      for(const z of [-.18,.18]){
+        cy(elbow,.16,.16,.08,steel,[0,0,z],[Math.PI/2,0,0]);
+        cy(elbow,.086,.086,.09,royal,[0,0,z+(z>0?.045:-.045)],[Math.PI/2,0,0]);
+        ring(elbow,.078,.01,blueGlow,[0,0,z+(z>0?.093:-.093)]);
+      }
+      for(const z of [-.105,.105]){
+        box(elbow,.15,.78,.115,steel,[0,.4,z],.036);
+        box(elbow,.085,.61,.13,metal,[0,.42,z],.028);
+      }
+      box(elbow,.24,.20,.28,dark,[0,.48,0],.06);
+      box(elbow,.28,.07,.29,mint,[0,.73,0],.02);
+      // End effector toolhead / gripper.
+      const wrist=new THREE.Group();wrist.position.set(0,.83,0);elbow.add(wrist);
+      cy(wrist,.135,.135,.32,dark,[0,.04,0],[Math.PI/2,0,0]);
+      for(const z of [-.174,.174]){
+        cy(wrist,.10,.10,.024,steel,[0,.04,z],[Math.PI/2,0,0]);
+        ring(wrist,.075,.009,glow,[0,.04,z+(z>0?.014:-.014)]);
+      }
+      box(wrist,.43,.31,.30,steel,[0,.22,0],.056);
+      box(wrist,.31,.11,.28,carbon,[0,.40,0],.035);
+      box(wrist,.45,.08,.26,royal,[0,.48,0],.025);
+      for(const x of [-.16,.16]){
+        screw(wrist,x,.24,.158,.015);
+      }
+      // Paired sliding fingers whose gap follows the estimated P8 commands.
+      function finger(side){
+        const g=new THREE.Group();wrist.add(g);
+        box(g,.11,.37,.16,metal,[0,.68,0],.035);
+        box(g,.055,.22,.18,dark,[-side*.035,.78,0],.02);
+        box(g,.14,.09,.18,rubber,[-side*.043,.85,0],.02);
+        box(g,.12,.055,.16,royal,[0,.5,0],.02);
+        for(const z of [-.09,.09])screw(g,0,.52,z,.012);
+        return g;
+      }
+      const fingerL=finger(-1),fingerR=finger(1);
+      // Soft visual power/status feedback, no physical status claim.
+      const led=ball(yawRig,.026,glow,[.26,.42,.245]);
+      const led2=ball(elbow,.021,blueGlow,[0,.48,.164]);
+      for(const m of [floorGlow,floorGlow2,led,led2])m.castShadow=false;
+
+      const targets={yaw:0,shoulder:-.26,elbow:.23,wrist:0,jaw:.31};
+      function setSteps(steps){
+        if(!Array.isArray(steps)||steps.length<4)return;
+        targets.yaw=THREE.MathUtils.clamp((Number(steps[0])||0)/32,-1,1)*1.25;
+        targets.shoulder=-.26+THREE.MathUtils.clamp((Number(steps[1])||0)/32,-1,1)*.55;
+        targets.elbow=.23+THREE.MathUtils.clamp((Number(steps[2])||0)/32,-1,1)*.76;
+        targets.wrist=THREE.MathUtils.clamp((Number(steps[2])||0)/32,-1,1)*-.20;
+        targets.jaw=.31-THREE.MathUtils.clamp((Number(steps[3])||0)/32,-1,1)*.15;
+      }
+      let alive=true,frame=0,lastW=0,lastH=0;
+      function resize(){
+        const w=Math.floor(host.clientWidth),h=Math.floor(host.clientHeight);
+        if(!w||!h)return;
+        if(w===lastW&&h===lastH)return;
+        lastW=w;lastH=h;
+        camera.aspect=w/h;
+        camera.updateProjectionMatrix();
+        renderer.setSize(w,h,false);
+      }
+      const clock=new THREE.Clock();
+      function step(){
+        if(!alive)return;
+        frame=requestAnimationFrame(step);
+        const visible=!document.hidden&&stage.getClientRects().length>0&&
+          getComputedStyle(stage).visibility!=='hidden'&&
+          !document.body.classList.contains('game-mode')&&
+          stage.getBoundingClientRect().bottom>=-100&&
+          stage.getBoundingClientRect().top<=innerHeight+100;
+        if(!visible)return;
+        resize();
+        const t=Math.min(clock.getDelta(),.06);
+        const alpha=1-Math.exp(-7.2*t);
+        yawRig.rotation.y=THREE.MathUtils.lerp(yawRig.rotation.y,targets.yaw,alpha);
+        shoulder.rotation.z=THREE.MathUtils.lerp(shoulder.rotation.z,targets.shoulder,alpha);
+        elbow.rotation.z=THREE.MathUtils.lerp(elbow.rotation.z,targets.elbow,alpha);
+        wrist.rotation.z=THREE.MathUtils.lerp(wrist.rotation.z,targets.wrist,alpha);
+        fingerL.position.x=THREE.MathUtils.lerp(fingerL.position.x,-targets.jaw,alpha);
+        fingerR.position.x=THREE.MathUtils.lerp(fingerR.position.x,targets.jaw,alpha);
+        floorGlow.rotation.z+=.08*t;
+        floorGlow2.rotation.z-=.045*t;
+        controls.update();
+        renderer.render(scene,camera);
+      }
+      engine={
+        resize,
+        setSteps,
+        cameraPreset(which){
+          const iso=which!=='front';
+          camera.position.set(...(iso?[4.35,3.45,5.45]:[0,2.35,6.1]));
+          controls.target.set(0,1.45,0);
+          controls.autoRotate=false;
+          controls.update();
+          selectedCamera(iso?'iso':'front');
+          resize();renderer.render(scene,camera);
+        },
+        dispose(){
+          alive=false;cancelAnimationFrame(frame);
+          controls.dispose();renderer.dispose();
+          scene.traverse(node=>{
+            if(node.isMesh&&node.geometry)node.geometry.dispose();
+          });
+          materials.forEach(m=>m.dispose());
+        }
+      };
+      engine.setSteps(requestedSteps);
+      stage.classList.add('three-active');
+      setStatus('THREE.JS · MODELO 3D');
+      resize();clock.start();requestAnimationFrame(step);
+      return engine;
+    }catch(err){
+      console.warn('Three.js não disponível. Prévia 2D mantida.',err);
+      if(renderer)renderer.dispose();
+      host.replaceChildren();
+      stage.classList.remove('three-active');
+      setStatus('MODO LEVE · PRÉVIA 2D');
+      startPromise=null;
+      return null;
+    }
+  })();
+  return startPromise;
+}
+window.robotbit3D={
+  show(){return initThree();},
+  setSteps(steps){
+    requestedSteps=Array.from(steps||[0,0,0,0]);
+    if(engine)engine.setSteps(requestedSteps);
+  },
+  resize(){if(engine)engine.resize();},
+  cameraPreset(name){if(engine)engine.cameraPreset(name);else void initThree();}
+};
+const observer=new IntersectionObserver(entries=>{
+  if(entries.some(e=>e.isIntersecting)&&
+      !document.getElementById('tab-preview').hidden&&
+      !document.body.classList.contains('game-mode')){
+    void initThree();
+  }
+},{rootMargin:'180px 0px'});
+observer.observe(stage);
+if(stage.getBoundingClientRect().top<innerHeight+100&&stage.getClientRects().length)void initThree();
+</script>
 </body>
 </html>
