@@ -163,6 +163,7 @@ body.dual-control .dual-badge{background:#103f35;border-color:#52bca5;color:#9ff
 .sensor-state{font-size:10px;color:#9cffe8;margin-top:10px;min-height:16px}
 .sensor-card button:disabled{opacity:.45}
 .game-mode .hero,.game-mode .extras,.game-mode .tool-panel{display:none}
+#exitGameMode[hidden]{display:none!important}
 .game-mode .page{max-width:1100px;padding-top:10px;padding-bottom:12px}
 .game-mode .topbar{margin-bottom:8px}
 .game-mode .connect-panel{padding:10px 14px}
@@ -188,6 +189,7 @@ body.dual-control .dual-badge{background:#103f35;border-color:#52bca5;color:#9ff
       <div><div class="brand-name">Robotbit <span style="color:#9eb7ff">Control</span></div><div class="brand-sub">MOBILE ROBOTICS · V4.0</div></div>
     </div>
     <div class="top-actions">
+      <button type="button" id="exitGameMode" class="icon-btn" aria-label="Sair do modo videogame" title="Sair do modo videogame" hidden>↩</button>
       <button class="icon-btn" type="button" id="iphoneHelpButton" aria-label="Ajuda para conectar no iPhone" title="Ajuda para iPhone">?</button>
       <div class="status-pill" id="status" role="status"><span class="light"></span><span id="statusText">Desconectado</span></div>
     </div>
@@ -383,7 +385,233 @@ body.dual-control .dual-badge{background:#103f35;border-color:#52bca5;color:#9ff
   let writeChain = Promise.resolve(), tickTimer = null, toastTimeout = null, sendingMove = false;
   let nextAxis = 0, gripOverride = 0;
   const pads = { left:{x:0,y:0,id:null}, right:{x:0,y:0,id:null} };
+
   const clamp = (n,min,max)=>Math.min(max,Math.max(min,n));
+  const prefKey='robotbit-control-v4-settings';
+  function loadPrefs(){
+    try{
+      const value=JSON.parse(localStorage.getItem(prefKey)||'null');
+      if(!value||!Array.isArray(value.invert)||value.invert.length!==4)return {invert:[false,false,false,false],deadzone:24};
+      return {invert:value.invert.map(Boolean),deadzone:clamp(Number(value.deadzone)||24,15,45)};
+    }catch(e){return {invert:[false,false,false,false],deadzone:24};}
+  }
+  let preferences=loadPrefs();
+  let gameModeOn=false,gamepadEnabled=false,tiltEnabled=false;
+  let tiltNeutral=null,lastTilt=null,tiltCoords={x:0,y:0},tiltTime=0;
+  let gamepadTimer=null;
+  const previewState={steps:[0,0,0,0],sent:0};
+  const commandChannels={L:[0,-1],R:[0,1],B:[1,-1],F:[1,1],D:[2,-1],U:[2,1],O:[3,-1],C:[3,1]};
+  const lab={
+    canvas:$('armCanvas'),tabs:Array.from(document.querySelectorAll('[data-tab]')),
+    deadzone:$('deadzone'),deadzoneOut:$('deadzoneOut'),
+    tiltButton:$('tiltToggle'),tiltCenter:$('tiltCalibrate'),tiltStatus:$('tiltStatus'),
+    gamepadButton:$('padToggle'),gamepadStatus:$('padStatus'),
+    gameMode:$('gameMode'),exitGameMode:$('exitGameMode')
+  };
+  const invertBoxes=Array.from(document.querySelectorAll('[data-invert]'));
+  function savePrefs(){try{localStorage.setItem(prefKey,JSON.stringify(preferences));}catch(e){}}
+  function refreshPrefs(){
+    lab.deadzone.value=String(preferences.deadzone);
+    lab.deadzoneOut.textContent=preferences.deadzone+'%';
+    invertBoxes.forEach((el,i)=>el.checked=preferences.invert[i]);
+  }
+  refreshPrefs();
+  invertBoxes.forEach(box=>box.addEventListener('change',()=>{
+    const idx=Number(box.dataset.invert);
+    if(!Number.isInteger(idx)||idx<0||idx>3)return;
+    preferences.invert[idx]=box.checked;savePrefs();
+  }));
+  lab.deadzone.addEventListener('input',()=>{
+    preferences.deadzone=clamp(Number(lab.deadzone.value),15,45);
+    lab.deadzoneOut.textContent=preferences.deadzone+'%';
+    savePrefs();
+  });
+  $('resetPrefs').addEventListener('click',()=>{
+    preferences={invert:[false,false,false,false],deadzone:24};
+    refreshPrefs();savePrefs();toast('Ajustes restaurados.');
+  });
+  function showTab(name){
+    for(const id of ['preview','settings','sensors']){
+      $('tab-'+id).hidden=id!==name;
+    }
+    lab.tabs.forEach(tab=>{
+      const selected=tab.dataset.tab===name;
+      tab.classList.toggle('selected',selected);
+      tab.setAttribute('aria-selected',selected?'true':'false');
+    });
+    if(name==='preview')requestAnimationFrame(drawArm);
+  }
+  lab.tabs.forEach(tab=>tab.addEventListener('click',()=>showTab(tab.dataset.tab)));
+  function disableTilt(){
+    tiltEnabled=false;tiltCoords={x:0,y:0};tiltTime=0;
+    window.removeEventListener('deviceorientation',onTilt);
+    lab.tiltButton.textContent='Ativar inclinação';lab.tiltStatus.textContent='Desativado';
+    lab.tiltCenter.disabled=true;
+  }
+  function onTilt(event){
+    if(!tiltEnabled)return;
+    if(!Number.isFinite(event.gamma)||!Number.isFinite(event.beta))return;
+    lastTilt={gamma:event.gamma,beta:event.beta};
+    if(!tiltNeutral)tiltNeutral={...lastTilt};
+    const x=clamp((lastTilt.gamma-tiltNeutral.gamma)/24,-1,1);
+    const y=clamp((tiltNeutral.beta-lastTilt.beta)/24,-1,1);
+    tiltCoords.x=x;tiltCoords.y=y;tiltTime=Date.now();
+    lab.tiltStatus.textContent='Sensor ativo · inclinação detectada';
+  }
+  lab.tiltButton.addEventListener('click',async()=>{
+    if(tiltEnabled){disableTilt();return;}
+    if(!window.DeviceOrientationEvent){lab.tiltStatus.textContent='Sensores de orientação indisponíveis neste navegador';return;}
+    try{
+      if(typeof DeviceOrientationEvent.requestPermission==='function'){
+        const permission=await DeviceOrientationEvent.requestPermission();
+        if(permission!=='granted'){lab.tiltStatus.textContent='Permissão de movimento negada';return;}
+      }
+      tiltEnabled=true;tiltNeutral=null;tiltTime=0;
+      lab.tiltButton.textContent='Desativar inclinação';
+      lab.tiltCenter.disabled=false;lab.tiltStatus.textContent='Mantenha o celular na posição neutra...';
+      window.addEventListener('deviceorientation',onTilt);
+    }catch(error){lab.tiltStatus.textContent='Não foi possível ativar os sensores';toast('Permita o acesso ao movimento no iPhone.');}
+  });
+  lab.tiltCenter.addEventListener('click',()=>{
+    if(!tiltEnabled||!lastTilt)return;
+    tiltNeutral={...lastTilt};tiltCoords={x:0,y:0};
+    lab.tiltStatus.textContent='Posição neutra atualizada';
+  });
+  function activeGamepad(){
+    if(!gamepadEnabled||typeof navigator.getGamepads!=='function')return null;
+    try{
+      const controllers=navigator.getGamepads();
+      return controllers && Array.from(controllers).find(g=>g&&g.connected&&g.axes.length>=2)||null;
+    }catch(e){return null;}
+  }
+  function padPressed(g,i){
+    const b=g&&g.buttons&&g.buttons[i];
+    return !!(b&&(b.pressed||b.value>=.6));
+  }
+  function gamepadValues(){
+    const pad=activeGamepad();
+    if(!pad)return null;
+    const axes=pad.axes;
+    const x=clamp(axes[0]||0,-1,1),y=clamp(-(axes[1]||0),-1,1);
+    const rx=clamp(axes[2]||0,-1,1),ry=clamp(-(axes[3]||0),-1,1);
+    const grip=padPressed(pad,1)||padPressed(pad,6)?-1:padPressed(pad,0)||padPressed(pad,7)?1:0;
+    return {x,y,rx,ry,grip,name:pad.id||'Gamepad'};
+  }
+  function updateGamepadStatus(){
+    if(!gamepadEnabled){lab.gamepadStatus.textContent='Desativado';return;}
+    const pad=activeGamepad();
+    lab.gamepadStatus.textContent=pad?'Controle reconhecido: '+(pad.id||'Gamepad').slice(0,54):'Aguardando controle: conecte e pressione um botão';
+  }
+  lab.gamepadButton.addEventListener('click',()=>{
+    if(gamepadEnabled){
+      gamepadEnabled=false;clearInterval(gamepadTimer);gamepadTimer=null;
+      lab.gamepadButton.textContent='Habilitar gamepad';updateGamepadStatus();return;
+    }
+    if(typeof navigator.getGamepads!=='function'){
+      lab.gamepadStatus.textContent='Este navegador não oferece Gamepad API';return;
+    }
+    gamepadEnabled=true;
+    lab.gamepadButton.textContent='Desativar gamepad';
+    gamepadTimer=setInterval(updateGamepadStatus,500);updateGamepadStatus();
+  });
+  window.addEventListener('gamepadconnected',updateGamepadStatus);
+  window.addEventListener('gamepaddisconnected',updateGamepadStatus);
+  function effectiveAxes(){
+    // O toque em cada pad sempre tem prioridade sobre um controle externo.
+    const gp=gamepadValues();
+    let leftX=pads.left.x,leftY=pads.left.y,rightX=pads.right.x,rightY=pads.right.y;
+    let externalGrip=0;
+    if(pads.left.id===null){
+      if(gp){leftX=gp.x;leftY=gp.y;}
+      else if(tiltEnabled&&Date.now()-tiltTime<900){
+        leftX=tiltCoords.x;leftY=tiltCoords.y;
+      }
+    }
+    if(pads.right.id===null&&gp){rightX=gp.rx;rightY=gp.ry;}
+    if(gp)externalGrip=gp.grip;
+    let grip=gripOverride!==0?gripOverride:externalGrip!==0?externalGrip:rightX;
+    const values=[leftX,leftY,rightY,grip];
+    return values.map((v,i)=>{
+      const value=clamp(Number(v)||0,-1,1)*(preferences.invert[i]?-1:1);
+      return Math.abs(value)<preferences.deadzone/100?0:value;
+    });
+  }
+  function updatePreview(code){
+    const channel=commandChannels[code];
+    if(!channel)return;
+    previewState.sent++;
+    const idx=channel[0];
+    previewState.steps[idx]=clamp(previewState.steps[idx]+channel[1]*Number(ui.speed.value),-32,32);
+    $('sentCount').textContent=String(previewState.sent);
+    for(const [i,id] of ['simBase','simArm','simHand'].entries()){
+      const n=previewState.steps[i];
+      $(id).textContent=(n>0?'+':'')+String(n);
+    }
+    if(!$('tab-preview').hidden)requestAnimationFrame(drawArm);
+  }
+  function drawArm(){
+    const canvas=lab.canvas,rect=canvas.getBoundingClientRect();
+    if(!rect.width||!rect.height)return;
+    const w=rect.width,h=rect.height,dpr=Math.min(window.devicePixelRatio||1,2);
+    canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);
+    const ctx=canvas.getContext('2d');if(!ctx)return;
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    ctx.clearRect(0,0,w,h);
+    // Malha isométrica de fundo.
+    ctx.strokeStyle='#547a9f19';ctx.lineWidth=1;
+    for(let n=-6;n<=12;n++){
+      ctx.beginPath();ctx.moveTo(w*.36+n*32,h*.82);ctx.lineTo(w*.7+n*42,h*.3);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(w*.05,h*.73+n*17);ctx.lineTo(w*.97,h*.73+n*17);ctx.stroke();
+    }
+    const [a,b,c,d]=previewState.steps;
+    const yaw=(a/30)*.84,shoulder=(b/30)*.6,wrist=(c/30)*.7;
+    const base={x:0,y:0,z:0};
+    const pivot={x:0,y:.37,z:0};
+    const arm={x:Math.cos(yaw)*.85*Math.cos(shoulder),y:.73+Math.sin(shoulder)*.85,z:Math.sin(yaw)*.85*Math.cos(shoulder)};
+    const elbow={x:arm.x+Math.cos(yaw)*.72*Math.cos(shoulder+wrist),y:arm.y+Math.sin(shoulder+wrist)*.72,z:arm.z+Math.sin(yaw)*.72*Math.cos(shoulder+wrist)};
+    function projection(p){return {x:w*.36+p.x*Math.min(w*.21,85)-p.z*32,y:h*.83-p.y*Math.min(h*.31,73)-p.z*13};}
+    const points=[base,pivot,arm,elbow].map(projection);
+    function link(u,v,color,width){
+      ctx.lineCap='round';ctx.lineJoin='round';ctx.shadowColor=color;ctx.shadowBlur=9;
+      ctx.strokeStyle=color;ctx.lineWidth=width;ctx.beginPath();ctx.moveTo(u.x,u.y);ctx.lineTo(v.x,v.y);ctx.stroke();
+      ctx.shadowBlur=0;ctx.strokeStyle='#c4e9ffb8';ctx.lineWidth=width*.18;
+      ctx.beginPath();ctx.moveTo(u.x-1,u.y-2);ctx.lineTo(v.x-1,v.y-2);ctx.stroke();
+    }
+    const p0=points[0],p1=points[1],p2=points[2],p3=points[3];
+    ctx.fillStyle='#4063a3';ctx.strokeStyle='#a0beff';ctx.lineWidth=2;
+    ctx.beginPath();ctx.ellipse(p0.x,p0.y,26,9,0,0,Math.PI*2);ctx.fill();ctx.stroke();
+    link(p1,p2,'#769aff',19);link(p2,p3,'#6ce9d6',13);
+    for(const [i,p] of points.entries()){
+      if(i===0)continue;
+      ctx.beginPath();ctx.fillStyle='#c5d5ff';ctx.strokeStyle='#5a80c4';ctx.lineWidth=5;
+      ctx.arc(p.x,p.y,i===3?8:11,0,Math.PI*2);ctx.fill();ctx.stroke();
+    }
+    const radius=6+clamp(16-d*.2,3,24);
+    const endX=p3.x+29*Math.cos(yaw),endY=p3.y-9;
+    link({x:p3.x,y:p3.y-radius},{x:endX,y:endY-radius},'#8af5d0',5);
+    link({x:p3.x,y:p3.y+radius},{x:endX,y:endY+radius},'#8af5d0',5);
+    ctx.fillStyle='#9bb5d7';ctx.font='10px system-ui';
+    ctx.fillText('P12 · base',Math.max(10,p0.x-28),Math.min(h-8,p0.y+25));
+    ctx.fillText('P14 · pulso',Math.min(w-90,p3.x+10),Math.max(20,p3.y-14));
+  }
+  window.addEventListener('resize',()=>{if(!$('tab-preview').hidden)requestAnimationFrame(drawArm);});
+  lab.gameMode.addEventListener('click',async()=>{
+    gameModeOn=!gameModeOn;
+    document.body.classList.toggle('game-mode',gameModeOn);
+    lab.gameMode.setAttribute('aria-pressed',gameModeOn?'true':'false');
+    lab.gameMode.textContent=gameModeOn?'Sair modo videogame':'▣ Modo videogame';
+    lab.exitGameMode.hidden=!gameModeOn;
+    if(gameModeOn){
+      window.scrollTo(0,0);
+      try{if(document.documentElement.requestFullscreen)await document.documentElement.requestFullscreen();}catch(e){}
+      try{if(screen.orientation&&screen.orientation.lock)await screen.orientation.lock('landscape');}catch(e){}
+    }else{
+      try{if(document.fullscreenElement)await document.exitFullscreen();}catch(e){}
+      try{if(screen.orientation&&screen.orientation.unlock)screen.orientation.unlock();}catch(e){}
+    }
+  });
+  lab.exitGameMode.addEventListener('click',()=>lab.gameMode.click());
+
   function toast(message) { ui.toast.textContent=message; ui.toast.classList.add('visible'); clearTimeout(toastTimeout); toastTimeout=setTimeout(()=>ui.toast.classList.remove('visible'),3300); }
   function render() {
     ui.status.classList.toggle('live',connected);
@@ -397,8 +625,9 @@ body.dual-control .dual-badge{background:#103f35;border-color:#52bca5;color:#9ff
     const fingers=(pads.left.id!==null?1:0)+(pads.right.id!==null?1:0);
     document.body.classList.toggle('dual-control',armed&&fingers===2);
     $('dualBadge').textContent=fingers===2?'2 / 2 · ATIVOS':fingers+' / 2 DEDOS';
-    ui.leftX.textContent=Math.round(pads.left.x*100)+'%';ui.leftY.textContent=Math.round(pads.left.y*100)+'%';
-    ui.rightX.textContent=Math.round(pads.right.x*100)+'%';ui.rightY.textContent=Math.round(pads.right.y*100)+'%';
+    const values=effectiveAxes();
+    ui.leftX.textContent=Math.round(values[0]*100)+'%';ui.leftY.textContent=Math.round(values[1]*100)+'%';
+    ui.rightX.textContent=Math.round(values[3]*100)+'%';ui.rightY.textContent=Math.round(values[2]*100)+'%';
     ui.speedValue.textContent=ui.speed.value+'°';
     document.querySelectorAll('.speed-chip').forEach(el=>{const selected=el.dataset.speed===ui.speed.value;el.classList.toggle('selected',selected);el.setAttribute('aria-pressed',selected?'true':'false');});
     ui.openGrip.classList.toggle('down',gripOverride===-1);
@@ -423,11 +652,13 @@ body.dual-control .dual-badge{background:#103f35;border-color:#52bca5;color:#9ff
     // Uma escrita BLE de cada vez, com no máximo 1 movimento pendente.
     const op = writeChain.then(async()=>{
       if (!connected || !bleWrite) return false;
+      if (commandChannels[code] && !armed) return false;
       const data = textEncoder.encode(code+'\n');
       const props = bleWrite.properties || {};
       if (props.writeWithoutResponse && typeof bleWrite.writeValueWithoutResponse === 'function') await bleWrite.writeValueWithoutResponse(data);
       else if (typeof bleWrite.writeValueWithResponse === 'function') await bleWrite.writeValueWithResponse(data);
       else await bleWrite.writeValue(data);
+      if(commandChannels[code])updatePreview(code);
       return true;
     });
     writeChain=op.catch(()=>{});
@@ -438,7 +669,7 @@ body.dual-control .dual-badge{background:#103f35;border-color:#52bca5;color:#9ff
   function startTicker(){stopTicker();tickTimer=setInterval(sendTick,55);}
   function sendTick(){
     if(!connected||!armed||sendingMove||document.hidden)return;
-    const axes=[pads.left.x,pads.left.y,pads.right.y,gripOverride!==0?gripOverride:pads.right.x];
+    const axes=effectiveAxes();
     const codes=[['L','R'],['B','F'],['D','U'],['O','C']];
     let chosen='';
     for(let i=0;i<4;i++) {
@@ -604,6 +835,7 @@ body.dual-control .dual-badge{background:#103f35;border-color:#52bca5;color:#9ff
   if (isIOS && !navigator.bluetooth) ui.device.textContent='Safari sem Web Bluetooth: ative a extensão beacio ou abra pelo Bluefy.';
   if (isIOS && navigator.bluetooth) ui.device.textContent='Bluetooth disponível no iPhone. Toque em Conectar ao micro:bit.';
   render();
+  requestAnimationFrame(drawArm);
   if (isIOS && !savedHelpChoice()) showIphoneHelp();
 })();
 </script>
