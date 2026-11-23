@@ -56,7 +56,11 @@ body.is-connected .connection-flag::before{background:var(--mint);box-shadow:0 0
 .live-badge{display:flex;align-items:center;gap:7px;background:#131d2d;border:1px solid #31435f;border-radius:30px;padding:7px 11px;color:#a4b4cf;font-size:10px;letter-spacing:1px;font-weight:900}
 .live-badge::before{content:"";width:6px;height:6px;border-radius:50%;background:#71839e}
 body.is-armed .live-badge{border-color:#3b8978;background:#123a33;color:#a4ffe9}body.is-armed .live-badge::before{background:#62ffd9;box-shadow:0 0 11px #62ffd9}
-.pads{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.pads{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;touch-action:none;overscroll-behavior:contain}
+.pads .pad-panel,.pads .pad-wrap,.pads .pad,.pads .pad *{touch-action:none;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+.pad-indicators{display:flex;gap:6px;align-items:center;justify-content:flex-end;flex-wrap:wrap}
+.dual-badge{font-size:10px;font-weight:850;letter-spacing:.3px;border:1px solid #395076;background:#16243a;color:#adc4df;border-radius:30px;padding:7px 10px;white-space:nowrap}
+body.dual-control .dual-badge{background:#103f35;border-color:#52bca5;color:#9fffe2;box-shadow:0 0 21px #3cc9ac30}
 .pad-panel{min-width:0;overflow:hidden;padding:18px 18px 16px;border:1px solid #30445f;border-radius:22px;background:radial-gradient(circle at 50% 22%,#28385963,transparent 70%),linear-gradient(150deg,#17263b,#0f1829);position:relative}
 .pad-panel.mint-card{background:radial-gradient(circle at 50% 22%,#176b5e43,transparent 70%),linear-gradient(150deg,#162b34,#0e1926)}
 .pad-panel::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;box-shadow:inset 0 1px #ffffff18}
@@ -131,7 +135,7 @@ body.is-armed .live-badge{border-color:#3b8978;background:#123a33;color:#a4ffe9}
   <header class="topbar">
     <div class="brandlock">
       <div class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4v7M11 11h10l2 6-7 4-7-4 2-6Z"/><path d="M9 17 5 23l3 5 5-5M23 17l4 6-3 5-5-5"/><circle cx="16" cy="15" r="1.2" fill="currentColor"/></svg></div>
-      <div><div class="brand-name">Robotbit <span style="color:#9eb7ff">Control</span></div><div class="brand-sub">MOBILE ROBOTICS · V3</div></div>
+      <div><div class="brand-name">Robotbit <span style="color:#9eb7ff">Control</span></div><div class="brand-sub">MOBILE ROBOTICS · V3.1</div></div>
     </div>
     <div class="top-actions">
       <button class="icon-btn" type="button" id="iphoneHelpButton" aria-label="Ajuda para conectar no iPhone" title="Ajuda para iPhone">?</button>
@@ -158,7 +162,7 @@ body.is-armed .live-badge{border-color:#3b8978;background:#123a33;color:#a4ffe9}
     <p id="device" class="device">Conecte a micro:bit. Por segurança, os controles começam bloqueados.</p>
   </section>
   <section aria-label="Controles da garra">
-    <div class="zone-head"><div><div class="kicker">02 / LIVE CONTROLS</div><h2>Central de movimento</h2><p>Arraste os joysticks. Solte para parar de enviar passos.</p></div><div class="live-badge" id="liveBadge">BLOQUEADO</div></div>
+    <div class="zone-head"><div><div class="kicker">02 / LIVE CONTROLS</div><h2>Central de movimento</h2><p>Use dois dedos: um em cada joystick, ao mesmo tempo.</p></div><div class="pad-indicators"><div class="dual-badge" id="dualBadge" aria-live="polite">0 / 2 DEDOS</div><div class="live-badge" id="liveBadge">BLOQUEADO</div></div></div>
     <div class="pads">
       <div class="pad-panel">
         <div class="pad-card-head"><span class="pad-index">CONTROLE 01</span><span class="pad-type">MOVIMENTO</span></div>
@@ -194,7 +198,7 @@ body.is-armed .live-badge{border-color:#3b8978;background:#123a33;color:#a4ffe9}
     <div class="speed-info"><div class="speed-ring"><div class="speed-meter"><strong id="speedValue">1°</strong></div><div><strong style="font-size:13px">Controle graduado</strong><p>Comece no modo Preciso para não forçar a mecânica.</p></div></div></div>
   </section>
   <button type="button" class="estop active" id="estop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><path d="m12 3 9 16a2 2 0 0 1-1.7 3H4.7A2 2 0 0 1 3 19L12 3Z"/><path d="M12 9v5m0 4h.01"/></svg><span>CONTROLE BLOQUEADO</span></button>
-  <footer class="footer"><span><strong>ROBOTBIT CONTROL V3</strong> · Projetado para micro:bit + Robotbit</span><span>Parada por software: não corta a alimentação dos servos.</span></footer>
+  <footer class="footer"><span><strong>ROBOTBIT CONTROL V3.1</strong> · Projetado para micro:bit + Robotbit</span><span>Parada por software: não corta a alimentação dos servos.</span></footer>
 </main>
 
 <div class="help-overlay" id="iphoneHelpOverlay" hidden>
@@ -291,6 +295,9 @@ body.is-armed .live-badge{border-color:#3b8978;background:#123a33;color:#a4ffe9}
     ui.stop.classList.toggle('active',!armed);
     ui.stop.querySelector('span').textContent=armed?'PARAR E BLOQUEAR':'CONTROLE BLOQUEADO';
     $('liveBadge').textContent=armed?'MOVIMENTO ATIVO':'BLOQUEADO';
+    const fingers=(pads.left.id!==null?1:0)+(pads.right.id!==null?1:0);
+    document.body.classList.toggle('dual-control',armed&&fingers===2);
+    $('dualBadge').textContent=fingers===2?'2 / 2 · ATIVOS':fingers+' / 2 DEDOS';
     ui.leftX.textContent=Math.round(pads.left.x*100)+'%';ui.leftY.textContent=Math.round(pads.left.y*100)+'%';
     ui.rightX.textContent=Math.round(pads.right.x*100)+'%';ui.rightY.textContent=Math.round(pads.right.y*100)+'%';
     ui.speedValue.textContent=ui.speed.value+'°';
@@ -329,7 +336,7 @@ body.is-armed .live-badge{border-color:#3b8978;background:#123a33;color:#a4ffe9}
     catch (e) { console.error('Falha BLE:',e); toast('Falha ao enviar comando Bluetooth.'); return false; }
   }
   function stopTicker(){ if(tickTimer!==null){clearInterval(tickTimer);tickTimer=null;} }
-  function startTicker(){stopTicker();tickTimer=setInterval(sendTick,85);}
+  function startTicker(){stopTicker();tickTimer=setInterval(sendTick,55);}
   function sendTick(){
     if(!connected||!armed||sendingMove||document.hidden)return;
     const axes=[pads.left.x,pads.left.y,pads.right.y,gripOverride!==0?gripOverride:pads.right.x];
@@ -397,59 +404,95 @@ body.is-armed .live-badge{border-color:#3b8978;background:#123a33;color:#a4ffe9}
     if(navigator.vibrate)navigator.vibrate(8);
   }));
   // Cada joystick aceita um dedo, permitindo controlar os dois ao mesmo tempo.
+
+  // Cada joystick mantém um ID de dedo independente (sem exigir isPrimary).
   function bindPad(key){
     const pad=$(key+'Pad'),nub=$(key+'Nub'),state=pads[key];
-    let renderPending=false,targetX=0,targetY=0;
+    let scheduled=false,targetX=0,targetY=0;
     function paint(){
-      renderPending=false;
+      scheduled=false;
       nub.style.transform='translate(-50%,-50%) translate('+targetX+'px,'+targetY+'px)';
     }
-    function move(ev){
-      const rect=pad.getBoundingClientRect(),radius=(rect.width/2)-(nub.offsetWidth/2)-5;
-      const dx=ev.clientX-(rect.left+rect.width/2),dy=ev.clientY-(rect.top+rect.height/2);
-      const distance=Math.hypot(dx,dy),scale=distance>radius?radius/distance:1;
+    function queuePaint(){if(!scheduled){scheduled=true;requestAnimationFrame(paint);}}
+    function move(x,y){
+      const rect=pad.getBoundingClientRect();
+      const radius=Math.max(1,rect.width/2-nub.offsetWidth/2-5);
+      const dx=x-(rect.left+rect.width/2),dy=y-(rect.top+rect.height/2);
+      const scale=Math.min(1,radius/Math.max(1,Math.hypot(dx,dy)));
       targetX=dx*scale;targetY=dy*scale;
-      const nx=radius?targetX/radius:0,ny=radius?-targetY/radius:0;
+      let nx=targetX/radius,ny=-targetY/radius;
       state.x=Math.abs(nx)<.24?0:Math.round(nx*100)/100;
       state.y=Math.abs(ny)<.24?0:Math.round(ny*100)/100;
-      if(!renderPending){renderPending=true;requestAnimationFrame(paint);}
-      render();
+      queuePaint();render();
     }
-    function release(ev){
-      if(ev && ev.pointerId!==state.id)return;
-      state.id=null;state.x=0;state.y=0;targetX=0;targetY=0;
+    function begin(id,x,y){
+      if(!armed||state.id!==null)return false;
+      state.id=id;pad.classList.add('held');
+      move(x,y);
+      if(navigator.vibrate)navigator.vibrate(8);
+      return true;
+    }
+    function release(id){
+      if(state.id===null||(id!==undefined&&id!==state.id))return;
+      state.id=null;state.x=0;state.y=0;
+      targetX=0;targetY=0;
       pad.classList.remove('held');
-      // Após soltar, o CSS devolve o joystick ao centro com efeito mola.
-      if(!renderPending)nub.style.transform='translate(-50%,-50%)';
-      else requestAnimationFrame(()=>{if(state.id===null)nub.style.transform='translate(-50%,-50%)';});
-      render();
+      queuePaint();render();
     }
-    pad.addEventListener('pointerdown',ev=>{
-      if(!armed||state.id!==null)return;
-      ev.preventDefault();state.id=ev.pointerId;
-      pad.classList.add('held');
-      try{pad.setPointerCapture(ev.pointerId);}catch(e){}
-      move(ev);
-      if(navigator.vibrate)navigator.vibrate(9);
-    });
-    pad.addEventListener('pointermove',ev=>{if(ev.pointerId===state.id){ev.preventDefault();move(ev);}});
-    pad.addEventListener('pointerup',release);
-    pad.addEventListener('pointercancel',release);
-    pad.addEventListener('lostpointercapture',()=>{if(state.id!==null)release();});
-    // Acessibilidade: setas movem os eixos quando o pad está focado.
+    if(window.PointerEvent){
+      pad.addEventListener('pointerdown',ev=>{
+        if(ev.pointerType==='mouse'&&ev.button!==0)return;
+        if(!begin(ev.pointerId,ev.clientX,ev.clientY))return;
+        ev.preventDefault();
+        try{pad.setPointerCapture(ev.pointerId);}catch(e){}
+      });
+      pad.addEventListener('pointermove',ev=>{
+        if(ev.pointerId!==state.id)return;
+        ev.preventDefault();move(ev.clientX,ev.clientY);
+      });
+      pad.addEventListener('pointerup',ev=>release(ev.pointerId));
+      pad.addEventListener('pointercancel',ev=>release(ev.pointerId));
+      pad.addEventListener('lostpointercapture',ev=>release(ev.pointerId));
+      pad.addEventListener('touchmove',ev=>{
+        if(state.id!==null)ev.preventDefault();
+      },{passive:false});
+    }else{
+      // Alternativa para iOS/WebViews sem Pointer Events.
+      pad.addEventListener('touchstart',ev=>{
+        for(const t of ev.changedTouches){if(begin('t'+t.identifier,t.clientX,t.clientY))break;}
+        if(state.id!==null)ev.preventDefault();
+      },{passive:false});
+      pad.addEventListener('touchmove',ev=>{
+        for(const t of ev.changedTouches)if(state.id==='t'+t.identifier)move(t.clientX,t.clientY);
+        if(state.id!==null)ev.preventDefault();
+      },{passive:false});
+      const touchEnd=ev=>{
+        for(const t of ev.changedTouches)release('t'+t.identifier);
+        if(state.id!==null)ev.preventDefault();
+      };
+      pad.addEventListener('touchend',touchEnd,{passive:false});
+      pad.addEventListener('touchcancel',touchEnd,{passive:false});
+    }
     pad.addEventListener('keydown',ev=>{
       if(!armed||!['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(ev.key))return;
       ev.preventDefault();
+      if(state.id===null)state.id='keyboard';
+      if(state.id!=='keyboard')return;
       if(ev.key==='ArrowLeft')state.x=-1;
       if(ev.key==='ArrowRight')state.x=1;
       if(ev.key==='ArrowUp')state.y=1;
       if(ev.key==='ArrowDown')state.y=-1;
       pad.classList.add('held');render();
     });
-    pad.addEventListener('keyup',ev=>{if(ev.key.startsWith('Arrow'))release();});
-    pad.addEventListener('blur',()=>{if(state.id===null)release();});
+    pad.addEventListener('keyup',ev=>{if(ev.key.startsWith('Arrow'))release('keyboard');});
+    pad.addEventListener('blur',()=>release('keyboard'));
   }
   bindPad('left');bindPad('right');
+  for(const name of ['gesturestart','gesturechange']){
+    document.addEventListener(name,ev=>{
+      if(armed&&(pads.left.id!==null||pads.right.id!==null))ev.preventDefault();
+    },{passive:false});
+  }
   function bindGrip(id,dir) {
     const button=$(id);
     button.addEventListener('pointerdown',ev=>{if(!armed)return;ev.preventDefault();button.setPointerCapture(ev.pointerId);gripOverride=dir;render();});
