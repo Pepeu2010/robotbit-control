@@ -737,6 +737,7 @@ body.game-mode.landscape-auto .grip-section{
     for(const [i,id] of ['simBase','simArm','simHand'].entries()){
       const n=previewState.steps[i];$(id).textContent=(n>0?'+':'')+String(n);
     }
+    window.robotbitPreviewSteps=previewState.steps.slice();
     if(window.robotbit3D?.setSteps)window.robotbit3D.setSteps(previewState.steps);
     requestAnimationFrame(drawArm);
     emitV5('simulation',{steps:previewState.steps.slice()});
@@ -1349,7 +1350,7 @@ const buttons={
   iso:document.getElementById('viewIso'),
   front:document.getElementById('viewFront')
 };
-let startPromise=null,engine=null,requestedCamera='iso';
+let startPromise=null,engine=null,requestedCamera='iso',requestedStyle='blue',requestedObjects=false;
 let requestedSteps=(window.robotbitPreviewSteps||[0,0,0,0]).slice();
 function setStatus(value){status.textContent=value;}
 function selectedCamera(which){
@@ -1550,6 +1551,15 @@ async function initThree(){
       const led=ball(yawRig,.026,glow,[.26,.42,.245]);
       const led2=ball(elbow,.021,blueGlow,[0,.48,.164]);
       for(const m of [floorGlow,floorGlow2,led,led2])m.castShadow=false;
+      // Optional tabletop training props. Decorative only; no collision physics.
+      const demoObjects=new THREE.Group();scene.add(demoObjects);
+      const propMat1=new THREE.MeshStandardMaterial({color:0xe9a15d,roughness:.53,metalness:.14});
+      const propMat2=new THREE.MeshStandardMaterial({color:0x6b92f6,roughness:.35,metalness:.25});
+      const propMat3=new THREE.MeshStandardMaterial({color:0x45b7a8,roughness:.43,metalness:.15});
+      box(demoObjects,.34,.30,.31,propMat1,[1.10,.01,.35],.025);
+      box(demoObjects,.26,.22,.26,propMat2,[-1.13,-.03,.25],.025);
+      cy(demoObjects,.16,.19,.27,propMat3,[1.55,-.02,-.68]);
+      demoObjects.visible=false;
 
       const targets={yaw:0,shoulder:-.26,elbow:.23,wrist:0,jaw:.31};
       function setSteps(steps){
@@ -1598,13 +1608,31 @@ async function initThree(){
         resize,
         setSteps,
         cameraPreset(which){
-          const iso=which!=='front';
-          camera.position.set(...(iso?[4.35,3.45,5.45]:[0,2.35,6.1]));
+          const views={
+            iso:[4.35,3.45,5.45],front:[0,2.35,6.1],
+            side:[6.0,2.9,.1],top:[.01,7.5,.4]
+          };
+          const view=views[which]||views.iso;
+          camera.position.set(...view);
           controls.target.set(0,1.45,0);
           controls.autoRotate=false;
           controls.update();
-          selectedCamera(iso?'iso':'front');
+          selectedCamera(which);
           resize();renderer.render(scene,camera);
+        },
+        setStyle(which){
+          const paints={
+            blue:[0x4167b9,0x3cbfae,0x6299ff],
+            teal:[0x257f80,0x6ff4ca,0x48e9ce],
+            graphite:[0x536779,0x90a7b5,0x879fc2]
+          };
+          const colors=paints[which]||paints.blue;
+          royal.color.setHex(colors[0]);mint.color.setHex(colors[1]);fill.color.setHex(colors[2]);
+          renderer.render(scene,camera);
+        },
+        setObjects(value){
+          demoObjects.visible=!!value;
+          renderer.render(scene,camera);
         },
         dispose(){
           alive=false;cancelAnimationFrame(frame);clearTimeout(pausedTick);
@@ -1616,6 +1644,8 @@ async function initThree(){
         }
       };
       engine.setSteps(requestedSteps);
+      engine.setStyle(requestedStyle);
+      engine.setObjects(requestedObjects);
       engine.cameraPreset(requestedCamera);
       stage.classList.add('three-active');
       setStatus('THREE.JS · MODELO 3D');
@@ -1640,7 +1670,19 @@ window.robotbit3D={
     if(engine)engine.setSteps(requestedSteps);
   },
   resize(){if(engine)engine.resize();},
-  cameraPreset(name){requestedCamera=name==='front'?'front':'iso';selectedCamera(requestedCamera);if(engine)engine.cameraPreset(requestedCamera);else void initThree();}
+  cameraPreset(name){
+    requestedCamera=['iso','front','side','top'].includes(name)?name:'iso';
+    selectedCamera(requestedCamera);
+    if(engine)engine.cameraPreset(requestedCamera);else void initThree();
+  },
+  setStyle(name){
+    requestedStyle=['blue','teal','graphite'].includes(name)?name:'blue';
+    if(engine)engine.setStyle(requestedStyle);else void initThree();
+  },
+  setObjects(value){
+    requestedObjects=!!value;
+    if(engine)engine.setObjects(requestedObjects);else void initThree();
+  }
 };
 const observer=new IntersectionObserver(entries=>{
   if(entries.some(e=>e.isIntersecting)&&
