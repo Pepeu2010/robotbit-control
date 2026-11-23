@@ -9,68 +9,95 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <style>
-    :root { color-scheme:dark; --bg:#080c17; --panel:#101827; --panel2:#172339; --line:#2a3952; --txt:#f4f7fd; --muted:#a4b3cd; --blue:#84a2ff; --mint:#6be5bf; --rose:#ff8290; }
-    * { box-sizing:border-box; }
-    html { min-height:100%; background:var(--bg); }
-    body { margin:0; min-height:100vh; background:radial-gradient(ellipse 90% 380px at 50% -140px,#253964,transparent),var(--bg); font:15px/1.5 system-ui,-apple-system,Segoe UI,sans-serif; color:var(--txt); }
-    button,input { font:inherit; }
-    button { cursor:pointer; touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
-    button:focus-visible,input:focus-visible,.pad:focus-visible { outline:2px solid var(--mint); outline-offset:3px; }
-    button:disabled { opacity:.48; cursor:not-allowed; }
-    .page { max-width:920px; margin:auto; padding:20px 16px max(28px,env(safe-area-inset-bottom)); }
-    header,.heading,.line-row,.pill,.grid-head { display:flex; align-items:center; justify-content:space-between; gap:12px; }
-    header { margin-bottom:26px; }
-    .identity { display:flex; align-items:center; gap:12px; }
-    .logo { display:grid; place-items:center; width:45px; height:45px; border-radius:14px; background:linear-gradient(145deg,#9fb8ff,#4768c2); color:#081022; font-weight:900; font-size:24px; box-shadow:0 8px 28px #6e92f822; }
-    .brand { margin:0; font-size:18px; letter-spacing:-.6px; }
-    .tiny { margin:1px 0 0; font-size:10px; letter-spacing:1.8px; color:var(--muted); font-weight:700; }
-    .pill { justify-content:flex-start; border:1px solid var(--line); padding:8px 11px; border-radius:100px; background:#162034; font-size:12px; white-space:nowrap; color:var(--muted); }
-    .light { width:7px; height:7px; border-radius:100px; background:#8390a5; }
-    .pill.live { color:var(--mint); border-color:#32705d; background:#10352c; } .pill.live .light { background:var(--mint); box-shadow:0 0 12px #6be5bf88; }
-    .heading { margin-bottom:15px; align-items:flex-end; }
-    .heading h2 { margin:0; font-size:clamp(25px,6vw,37px); line-height:1.1; letter-spacing:-1.2px; }
-    .heading p { margin:9px 0 0; font-size:13px; color:var(--muted); }
-    .version { background:#1c2c48; border:1px solid #354d76; color:#bad2ff; padding:7px 9px; border-radius:9px; white-space:nowrap; font-size:11px; }
-    .panel { background:linear-gradient(145deg,#152038,#101827); border:1px solid var(--line); padding:18px; border-radius:22px; margin-top:14px; box-shadow:inset 0 1px #ffffff09; }
-    .panel h3 { font-size:15px; margin:0; } .panel h3 small { color:#7f93b3; font-weight:600; font-size:12px; margin-right:6px; }
-    .caption { font-size:12px; color:var(--muted); margin:4px 0 0; }
-    .actions { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:9px; margin-top:14px; }
-    .actions #connect { grid-column:1 / -1; }
-    .actions #enable { min-width:0; }
-    .btn { min-height:47px; border-radius:12px; border:1px solid #4b6192; color:#091020; padding:11px 15px; background:var(--blue); font-size:13px; font-weight:750; }
-    .btn.secondary { background:#1f304e; border-color:#3c5377; color:var(--txt); }
-    .btn.primary { flex:1; }
-    .btn.safe { background:#145343; border-color:#2b8b6a; color:#eafff5; }
-    .device { font-size:12px; color:var(--muted); margin:12px 0 0; overflow-wrap:anywhere; }
-    .pads { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin-top:18px; }
-    .pad-panel { border:1px solid #30405b; border-radius:17px; background:#0d1626; padding:12px 7px 16px; min-width:0; text-align:center; }
-    .pad-label { font-size:13px; font-weight:800; margin:0; }
-    .pad-detail { font-size:10px; letter-spacing:.4px; color:var(--muted); margin:2px 0 12px; }
-    .pad { position:relative; margin:auto; width:min(39vw,260px); height:min(39vw,260px); min-width:130px; min-height:130px; max-width:260px; max-height:260px; border:1px solid #49617d; border-radius:50%; touch-action:none; user-select:none; -webkit-user-select:none; background:radial-gradient(circle,#213654 0 23%,#1b2b45 24% 48%,#142039 49% 74%,#101a2e 75%); box-shadow:inset 0 10px 20px #0004; overflow:hidden; }
-    .pad::before,.pad::after { content:""; position:absolute; background:#7591b135; pointer-events:none; }
-    .pad::before { width:1px; height:100%; left:50%; top:0; } .pad::after { width:100%; height:1px; top:50%; left:0; }
-    .nub { position:absolute; top:50%; left:50%; width:37%; height:37%; border-radius:100px; border:4px solid #aec1ff; background:radial-gradient(circle at 35% 28%,#c1d0ff,#6d91ef 62%,#415fac); transform:translate(-50%,-50%); pointer-events:none; box-shadow:0 9px 17px #0007; }
-    .pad.mint .nub { border-color:#8bf1d0; background:radial-gradient(circle at 35% 28%,#c5ffed,#3bbb99 65%,#207363); }
-    .label { font-size:10px; color:#91a3bf; font-weight:650; margin:10px 0 0; }
-    .axis { display:flex; gap:8px; margin-top:14px; }
-    .axis span { flex:1; font-size:11px; color:#a9bbd7; background:#13213a; border:1px solid #2f4264; padding:7px 4px; border-radius:9px; }
-    .axis strong { color:#fff; font-variant-numeric:tabular-nums; }
-    .grip-buttons { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:15px; }
-    .grip-buttons button { min-height:56px; background:#1f334e; border:1px solid #3b5b82; color:var(--txt); border-radius:13px; font-weight:750; touch-action:none; }
-    .grip-buttons button.down { background:#27554e; border-color:#4eab96; }
-    .controlbar { margin-top:14px; display:grid; grid-template-columns:1fr auto; gap:15px; align-items:center; }
-    .controlbar label { font-size:13px; font-weight:750; }
-    input[type=range] { display:block; width:100%; margin:9px 0; accent-color:var(--blue); }
-    .hint { font-size:12px; color:var(--muted); margin:5px 0 0; }
-    .speed-number { color:var(--mint); background:#12372e; padding:9px 12px; border-radius:10px; font-size:14px; font-weight:850; min-width:56px; text-align:center; }
-    .estop { width:100%; border-radius:15px; border:1px solid #b45166; background:linear-gradient(150deg,#7a293c,#4c1828); min-height:66px; font-weight:850; color:#fff; font-size:16px; margin-top:16px; }
-    .estop.active { background:#194c3c; border-color:#469a79; }
-    .ios-guide { display:none; margin:13px 0 2px; background:#122b39; border:1px solid #3c877c; border-radius:13px; padding:13px 14px; color:#d9fff4; font-size:12px; line-height:1.6; }
-    .ios.needs-ble-extension .ios-guide { display:block; }
-    .ios-guide strong { display:block; margin-bottom:3px; color:#fff; font-size:13px; }
-    .ios-guide a { color:#9ed9ff; text-decoration:underline; text-underline-offset:2px; }
-    .pad,.grip-buttons button { -webkit-touch-callout:none; }
-
+:root{color-scheme:dark;--bg:#070a11;--card:#111825;--line:#26374d;--ink:#f5f7ff;--muted:#92a3be;--blue:#8ca8ff;--mint:#5cf2d3;--purple:#b7a3ff;--red:#ff667b}
+*,*::before,*::after{box-sizing:border-box}
+html{min-height:100%;background:var(--bg);scroll-behavior:smooth}
+body{margin:0;min-height:100vh;color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,system-ui,sans-serif;background:radial-gradient(ellipse 600px 410px at 87% -10%,#263b6e7a,transparent 83%),radial-gradient(ellipse 540px 500px at 2% 42%,#18264766,transparent 90%),#080c15;overflow-x:hidden}
+body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background-image:linear-gradient(#7c91bb09 1px,transparent 1px),linear-gradient(90deg,#7c91bb09 1px,transparent 1px);background-size:42px 42px;mask-image:linear-gradient(#0007,transparent 88%)}
+button,input{font:inherit}button{cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation}button:disabled{opacity:.44;cursor:not-allowed}
+button:focus-visible,input:focus-visible,.pad:focus-visible,a:focus-visible{outline:2px solid var(--mint);outline-offset:4px}
+a{color:inherit}.page{width:min(100%,1080px);margin:auto;padding:22px clamp(13px,3.7vw,34px) max(30px,env(safe-area-inset-bottom))}
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.brandlock{display:flex;align-items:center;gap:11px}.brand-mark{height:46px;width:46px;border:1px solid #6c84d8a8;background:linear-gradient(145deg,#3e5ca6,#182844);border-radius:15px;display:grid;place-items:center;box-shadow:inset 0 1px #ffffff35,0 8px 25px #6681f325;color:#d5e1ff}
+.brand-mark svg{width:27px;height:27px}.brand-name{font-weight:850;font-size:18px;letter-spacing:-.9px;line-height:1.1}.brand-sub{font-size:9px;letter-spacing:2.2px;color:#9cb3d4;margin-top:5px;font-weight:800}
+.top-actions{display:flex;align-items:center;gap:9px}.icon-btn{height:39px;width:39px;display:grid;place-items:center;border:1px solid #344562;border-radius:13px;background:#152037de;color:#dce8ff;font-size:21px}.icon-btn:hover{border-color:#728dda}
+.status-pill{display:flex;align-items:center;gap:8px;border:1px solid #33425a;padding:10px 12px;border-radius:50px;color:#a8b6cb;font-size:11px;font-weight:700;white-space:nowrap;background:#121b2d}
+.status-pill .light{width:8px;height:8px;border-radius:50%;background:#75839b;box-shadow:0 0 0 4px #76849b20}
+.status-pill.live{color:#9ef9e1;border-color:#237c6a;background:#0c302c}.status-pill.live .light{background:var(--mint);box-shadow:0 0 0 4px #59f4d51d,0 0 14px var(--mint)}
+.hero{display:grid;grid-template-columns:minmax(0,1fr) 220px;align-items:center;gap:12px;padding:43px 5px 28px;position:relative}
+.eyebrow{color:#a0b8ff;letter-spacing:2.5px;font-weight:800;font-size:10px;display:flex;align-items:center;gap:8px}.eyebrow::before{content:"";width:22px;height:1px;background:#9eb5ff}
+.hero h1{font-size:clamp(35px,5.8vw,62px);line-height:1.03;letter-spacing:-2.5px;margin:12px 0 14px;font-weight:850}
+.hero h1 em{font-style:normal;background:linear-gradient(95deg,#d0dcff,#8daeff 57%,#76f4d5);color:transparent;background-clip:text;-webkit-background-clip:text}
+.hero p{font-size:13px;line-height:1.65;color:var(--muted);max-width:510px;margin:0}
+.hero-tags{display:flex;gap:7px;margin-top:17px;flex-wrap:wrap}.hero-tags span{border:1px solid #344765;background:#121e31;padding:5px 9px;border-radius:7px;font-weight:650;color:#afc3e2;font-size:10px;letter-spacing:.3px}
+.core-wrap{position:relative;height:190px;display:grid;place-items:center;isolation:isolate}
+.core-halo{position:absolute;width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,#5368d255 0,#1e3b802d 35%,transparent 75%);filter:blur(9px);animation:haloPulse 4s ease-in-out infinite}
+.core-orbit{position:absolute;width:155px;height:155px;border-radius:50%;border:1px dashed #79a7ef70;animation:spin 26s linear infinite}.core-orbit::after{content:"";position:absolute;top:7px;left:25px;width:7px;height:7px;background:var(--mint);border-radius:50%;box-shadow:0 0 14px var(--mint)}
+.core-orbit.second{width:120px;height:120px;border-style:solid;border-color:#627cff55;animation-direction:reverse;animation-duration:20s;transform:rotate(20deg)}
+.core-shape{display:grid;place-items:center;width:82px;height:82px;border-radius:25px;background:linear-gradient(135deg,#304b89,#13223c);border:1px solid #93afff7d;box-shadow:inset 0 1px #e8efff36,0 0 44px #5573f266;transform:rotate(-12deg);animation:coreFloat 5s ease-in-out infinite}
+.core-shape svg{width:43px;height:43px;color:#dce8ff;transform:rotate(12deg)}
+.panel{border:1px solid #304159;background:linear-gradient(145deg,#172233f5,#101824eb);border-radius:23px;box-shadow:0 16px 42px #00000024,inset 0 1px #ffffff10}
+.panel-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.kicker{font-size:10px;letter-spacing:1.65px;font-weight:850;color:#9ab0d5}.panel h2,.zone-head h2{margin:6px 0 0;font-size:18px;letter-spacing:-.5px;line-height:1.2}.muted{color:var(--muted)}
+.connect-panel{padding:23px 23px 18px;position:relative;overflow:hidden}.connect-panel::after{content:"";position:absolute;right:-45px;top:-70px;height:160px;width:220px;background:radial-gradient(circle,#648bff16,transparent 70%);pointer-events:none}
+.connection-flag{display:flex;gap:7px;align-items:center;color:#8fa6c5;font-size:10px;letter-spacing:1px;text-transform:uppercase}
+.connection-flag::before{content:"";width:6px;height:6px;background:#64738a;border-radius:50%}
+body.is-connected .connection-flag::before{background:var(--mint);box-shadow:0 0 12px var(--mint)}
+.conn-steps{display:flex;gap:0;align-items:center;margin:18px 0;color:#8fa3c1;font-size:10px;font-weight:750}
+.conn-steps span{border:1px solid #344761;background:#15223a;padding:6px 10px;border-radius:20px;white-space:nowrap}
+.conn-steps i{width:25px;max-width:5vw;border-top:1px dashed #587097;display:block}
+.connect-actions{display:grid;grid-template-columns:1fr 1fr auto;gap:9px}
+.btn{display:inline-flex;justify-content:center;align-items:center;gap:9px;min-height:49px;border-radius:12px;padding:11px 14px;border:1px solid #48609a;background:#8ca8ff;color:#0a1832;font-size:12px;font-weight:800;transition:transform .18s,background .18s,border-color .18s,box-shadow .18s}
+.btn:not(:disabled):active,.grip-key:active,.speed-chip:active{transform:scale(.97)}.btn.primary{background:linear-gradient(125deg,#a4baff,#789cff);box-shadow:0 9px 28px #7b98ff25}.btn.primary:not(:disabled):hover{box-shadow:0 12px 35px #7b98ff50}
+.btn.safe{background:#173e39;border-color:#347669;color:#a6ffe6}.btn.safe:not(:disabled):hover{background:#1e554b}
+.btn.secondary{background:#1c2b40;border-color:#344763;color:#c9d8ee}
+.device{font-size:11px;color:#a5b9d2;margin:13px 0 0;overflow-wrap:anywhere;line-height:1.5;min-height:16px}
+.zone-head{display:flex;justify-content:space-between;align-items:end;gap:10px;margin:29px 2px 12px}.zone-head h2{font-size:19px}.zone-head p{margin:5px 0 0;color:#8c9eb9;font-size:12px}
+.live-badge{display:flex;align-items:center;gap:7px;background:#131d2d;border:1px solid #31435f;border-radius:30px;padding:7px 11px;color:#a4b4cf;font-size:10px;letter-spacing:1px;font-weight:900}
+.live-badge::before{content:"";width:6px;height:6px;border-radius:50%;background:#71839e}
+body.is-armed .live-badge{border-color:#3b8978;background:#123a33;color:#a4ffe9}body.is-armed .live-badge::before{background:#62ffd9;box-shadow:0 0 11px #62ffd9}
+.pads{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.pad-panel{min-width:0;overflow:hidden;padding:18px 18px 16px;border:1px solid #30445f;border-radius:22px;background:radial-gradient(circle at 50% 22%,#28385963,transparent 70%),linear-gradient(150deg,#17263b,#0f1829);position:relative}
+.pad-panel.mint-card{background:radial-gradient(circle at 50% 22%,#176b5e43,transparent 70%),linear-gradient(150deg,#162b34,#0e1926)}
+.pad-panel::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;box-shadow:inset 0 1px #ffffff18}
+.pad-card-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.pad-index{color:#c1d2ed;font-weight:900;font-size:10px;letter-spacing:1.8px}
+.pad-type{font-size:10px;color:#afc3e3;border:1px solid #344d70;border-radius:6px;padding:4px 7px;background:#172a42}
+.pad-label{font-size:18px;font-weight:850;letter-spacing:-.5px;margin:12px 0 0}
+.pad-detail{font-size:11px;color:#8fa5c5;margin:2px 0 0}
+.pad-wrap{position:relative;width:100%;display:grid;place-items:center;margin:15px auto 17px;min-height:150px}
+.pad{width:min(29vw,232px);height:min(29vw,232px);min-width:135px;min-height:135px;max-width:232px;max-height:232px;border-radius:50%;position:relative;user-select:none;-webkit-user-select:none;touch-action:none;overflow:hidden;border:1px solid #6e87ab75;background:radial-gradient(circle at 45% 37%,#26395b 0 16%,#1d2e4a 17% 36%,#14233b 37% 62%,#0b1829 63% 100%);box-shadow:inset 0 13px 21px #030c1fb3,inset 0 -3px 7px #a9c5ff12,0 13px 33px #0005;cursor:grab;transition:border-color .25s,box-shadow .25s}
+.pad.mint{border-color:#3d9d8d8a;background:radial-gradient(circle at 45% 37%,#19413e 0 16%,#183935 17% 36%,#102a30 37% 62%,#0b1925 63% 100%)}
+.pad::before,.pad::after{content:"";position:absolute;background:#8eb1e638;pointer-events:none}
+.pad::before{height:100%;width:1px;left:50%;top:0}.pad::after{width:100%;height:1px;left:0;top:50%}
+.pad-ring{position:absolute;inset:9%;border-radius:50%;border:1px dashed #98b8e027;pointer-events:none;animation:spin 40s linear infinite}
+.pad-guide{position:absolute;color:#7895c0;font-size:11px;font-weight:900;line-height:1;pointer-events:none;z-index:1}
+.pad-guide.up{top:10px;left:50%;transform:translateX(-50%)}.pad-guide.down{bottom:10px;left:50%;transform:translateX(-50%)}.pad-guide.left{top:50%;left:10px;transform:translateY(-50%)}.pad-guide.right{top:50%;right:10px;transform:translateY(-50%)}
+.pad-glow{position:absolute;inset:17%;border-radius:50%;background:radial-gradient(circle,#739dff4a,transparent 67%);filter:blur(18px);opacity:.1;transition:opacity .18s;pointer-events:none}
+.pad.mint .pad-glow{background:radial-gradient(circle,#62f2cd5c,transparent 67%)}
+.pad.held{cursor:grabbing;border-color:#acc5ff;box-shadow:inset 0 13px 21px #030c1fb3,0 0 25px #789dff66}.pad.mint.held{border-color:#a0ffdb;box-shadow:inset 0 13px 21px #030c1fb3,0 0 25px #4af3d24e}.pad.held .pad-glow{opacity:1}
+.nub{position:absolute;left:50%;top:50%;width:37%;height:37%;border-radius:50%;transform:translate(-50%,-50%);background:radial-gradient(circle at 32% 25%,#c5d5ff,#7699f2 52%,#364e98);border:4px solid #a3b9fc;box-shadow:0 6px 18px #000b,inset 0 2px 7px #ffffff8a;pointer-events:none;z-index:2;transition:transform .23s cubic-bezier(.2,1.5,.3,1)}
+.pad.held .nub{transition:none}.pad.mint .nub{background:radial-gradient(circle at 32% 25%,#cbffef,#4acaaa 55%,#166257);border-color:#91f3dc}
+.nub::before{content:"";position:absolute;inset:22%;border-radius:50%;border:1px solid #ffffff55;background:radial-gradient(circle at 40% 35%,#ffffff28,transparent 70%)}
+.pad-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.pad-stat{padding:10px;border:1px solid #344762;border-radius:10px;background:#0b1526a6;display:flex;justify-content:space-between;gap:5px;align-items:center}
+.pad-stat span{font-size:10px;color:#9cb2d3}.pad-stat strong{font-variant-numeric:tabular-nums;color:#d6e4ff;font-size:12px}
+.mint-card .pad-stat strong{color:#97efd7}
+.grip-section{display:flex;flex-direction:column;gap:10px;margin-top:13px}.grip-label{font-size:10px;letter-spacing:1.5px;color:#91a7c8;font-weight:900}
+.grip-buttons{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grip-key{display:flex;align-items:center;justify-content:center;gap:8px;min-height:55px;border-radius:13px;background:linear-gradient(150deg,#1a3651,#12263d);color:#e9f7ff;border:1px solid #3e627e;font-weight:800;font-size:12px;transition:background .18s,transform .15s,box-shadow .18s;touch-action:none}
+.grip-key svg{width:18px;height:18px;opacity:.85}.grip-key.down{background:#185c51;border-color:#6decc8;box-shadow:0 0 20px #5ff0d235}
+.tool-panel{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:24px;padding:22px 23px;margin-top:14px;align-items:center}
+.speed-group{display:flex;gap:8px;margin-top:15px}.speed-chip{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;gap:3px;border:1px solid #374b68;border-radius:11px;background:#101d30;color:#a7bad8;padding:10px 7px;transition:.2s}
+.speed-chip strong{font-size:12px;font-weight:850}.speed-chip small{font-size:10px}.speed-chip.selected{background:linear-gradient(145deg,#29467c,#1e3561);border-color:#8ba8ff;color:#fff;box-shadow:0 7px 25px #748fff20}
+.speed-info{border-left:1px solid #34455c;padding:6px 0 6px 23px}.speed-ring{display:flex;align-items:center;gap:14px}.speed-meter{width:66px;height:66px;flex:none;display:grid;place-items:center;border-radius:50%;border:4px solid #31486c;box-shadow:0 0 0 1px #5a76a940,inset 0 0 19px #86aaff0d;background:#17263d}
+.speed-meter strong{color:#a7c1ff;font-weight:900;font-size:18px}.speed-info p{font-size:11px;color:#9badc8;line-height:1.5;margin:4px 0 0}
+.estop{margin-top:14px;display:flex;width:100%;justify-content:center;align-items:center;gap:12px;padding:15px;min-height:64px;border-radius:15px;border:1px solid #934557;background:linear-gradient(140deg,#622938,#351823);color:#ffe4e6;font-weight:900;letter-spacing:.6px;box-shadow:inset 0 1px #ffb1b126;transition:transform .15s,background .2s,box-shadow .2s}
+.estop svg{width:25px;height:25px}.estop:not(.active){box-shadow:0 0 35px #e5424930;animation:dangerBreathe 2.1s ease-in-out infinite}
+.estop.active{background:#152c2a;border-color:#315b52;color:#8caeaa}
+.footer{display:flex;justify-content:space-between;gap:15px;align-items:center;padding:20px 3px 0;font-size:10px;line-height:1.5;color:#7e90ab}.footer strong{color:#abc2df}
+.snackbar{position:fixed;z-index:700;bottom:calc(22px + env(safe-area-inset-bottom));left:50%;transform:translate(-50%,16px);padding:12px 18px;max-width:calc(100vw - 26px);min-width:180px;opacity:0;pointer-events:none;border:1px solid #607aab;border-radius:13px;background:#203452;box-shadow:0 18px 45px #000a;color:white;font-size:12px;transition:opacity .2s,transform .2s;text-align:center}
+.snackbar.visible{opacity:1;transform:translate(-50%,0)}
     .help-link { display:inline-flex;align-items:center;gap:6px;margin-top:11px;border:1px solid #405b84;border-radius:11px;background:#20344f;color:#d8e7ff;padding:9px 12px;font-size:12px;font-weight:750; }
     .help-link:hover { background:#2a4265; }
     .help-overlay[hidden] { display:none !important; }
@@ -92,67 +119,82 @@
     .help-fallback a { color:#adcbff; }
     body.iphone-help-open { overflow:hidden; }
     @media(max-width:380px) { .help-dialog { padding:20px 15px; } .help-dialog h2 { font-size:24px; } }
-    .footer { font-size:11px; line-height:1.5; color:#8192ad; margin:18px 5px 0; text-align:center; }
-    .snackbar { position:fixed; z-index:99; left:50%; transform:translate(-50%,12px); bottom:calc(18px + env(safe-area-inset-bottom)); background:#20314e; border:1px solid #5976a9; border-radius:12px; box-shadow:0 14px 40px #000a; padding:13px 16px; min-width:180px; max-width:calc(100vw - 26px); color:#f7faff; font-size:13px; opacity:0; pointer-events:none; transition:opacity .16s,transform .16s; }
-    .snackbar.visible { opacity:1; transform:translate(-50%,0); }
-    @media (min-width:760px) { .page { padding:28px 24px 38px; } .panel { padding:22px; } .pads { gap:20px; } .actions { display:flex; } .actions #connect { flex:1; } }
-    @media (max-width:360px) { .panel { padding:13px; } .pad { width:38vw; height:38vw; min-width:112px; min-height:112px; } .pad-panel { padding:11px 5px; } .pad-detail { font-size:9px; } }
-  </style>
+
+@keyframes spin{to{transform:rotate(360deg)}}@keyframes coreFloat{0%,100%{transform:translateY(0) rotate(-12deg)}50%{transform:translateY(-9px) rotate(-8deg)}}@keyframes haloPulse{0%,100%{opacity:.6;transform:scale(.9)}50%{opacity:1;transform:scale(1.12)}}@keyframes dangerBreathe{0%,100%{box-shadow:0 0 0 #ff607500}50%{box-shadow:0 0 24px #ff60752e}}
+@media (max-width:680px){.hero{grid-template-columns:minmax(0,1fr) 120px;padding:31px 2px 22px}.hero h1{font-size:clamp(30px,7vw,44px);letter-spacing:-1.7px}.core-wrap{height:115px}.core-halo{width:120px;height:120px}.core-orbit{width:108px;height:108px}.core-orbit.second{width:82px;height:82px}.core-shape{width:57px;height:57px;border-radius:19px}.core-shape svg{width:32px;height:32px}.connect-panel{padding:18px}.tool-panel{grid-template-columns:1fr;gap:14px}.speed-info{border-left:0;border-top:1px solid #34455c;padding:14px 0 0}.pad-panel{padding:14px 11px}.pad{width:34vw;height:34vw}.pad-label{font-size:16px}.pad-wrap{margin:12px auto 13px}.footer{display:block}.footer span{display:block;margin-top:5px}}
+@media (max-width:380px){.brand-name{font-size:15px}.brand-sub{font-size:8px}.brand-mark{width:40px;height:40px}.status-pill{font-size:10px;padding:8px 9px}.hero{grid-template-columns:minmax(0,1fr) 95px}.core-orbit{width:94px;height:94px}.core-orbit.second{width:68px;height:68px}.core-halo{width:104px;height:104px}.core-shape{width:49px;height:49px}.hero h1{font-size:30px}.pads{gap:8px}.pad-panel{padding:12px 8px}.pad{min-width:126px;min-height:126px}.pad-stat{padding:7px 5px}.pad-stat span{font-size:9px}.pad-detail{font-size:10px}.connect-actions{grid-template-columns:1fr 1fr}.connect-actions #connect{grid-column:1/-1}.connect-actions #disconnect{grid-column:1/-1}.grip-key{font-size:11px}.speed-chip{padding:9px 4px}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms !important;transition-duration:.01ms !important;scroll-behavior:auto !important}}
+</style>
 </head>
 <body>
 <main class="page">
-  <header>
-    <div class="identity"><div class="logo">R</div><div><h1 class="brand">Robotbit Control</h1><p class="tiny">MOBILE ROBOTICS</p></div></div>
-    <div id="status" class="pill" role="status"><span class="light"></span><span id="statusText">Desconectado</span></div>
-  </header>
-  <div class="heading">
-    <div><h2>Controle na<br>palma da mão.</h2><p>Micro:bit + Robotbit • 4 servos • Bluetooth BLE</p></div>
-    <span class="version">V2.3</span>
-  </div>
-
-  <section class="panel" aria-label="Conexão">
-    <h3><small>01 /</small> Conexão sem fio</h3>
-    <p id="platformHint" class="caption">Android: Chrome • iPhone: Safari com extensão BLE ou Bluefy • HTTPS</p>
-    <div class="ios-guide" id="iosGuide" role="note"><strong>Habilitar Bluetooth no Safari</strong>O Safari do iPhone não inclui Web Bluetooth nativamente. Para conectar por esta página, instale a extensão gratuita <a href="https://apps.apple.com/br/app/beacio/id6761301368" target="_blank" rel="noopener noreferrer">beacio (iOS 26.2 ou superior)</a>, ative-a em <strong style="display:inline;font-size:inherit">Ajustes → Apps → Safari → Extensões</strong> e autorize seu uso neste site. Recarregue a página e toque em “Conectar ao micro:bit”. Em versões anteriores do iOS, use o <a href="https://apps.apple.com/br/app/bluefy-web-ble-browser/id1492822055" target="_blank" rel="noopener noreferrer">Bluefy</a> como alternativa.</div>
-    <div class="actions">
-      <button type="button" id="connect" class="btn primary">Conectar ao micro:bit</button>
-      <button type="button" id="enable" class="btn safe" disabled>Habilitar controle</button>
-      <button type="button" id="disconnect" class="btn secondary" disabled>Sair</button>
+  <header class="topbar">
+    <div class="brandlock">
+      <div class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4v7M11 11h10l2 6-7 4-7-4 2-6Z"/><path d="M9 17 5 23l3 5 5-5M23 17l4 6-3 5-5-5"/><circle cx="16" cy="15" r="1.2" fill="currentColor"/></svg></div>
+      <div><div class="brand-name">Robotbit <span style="color:#9eb7ff">Control</span></div><div class="brand-sub">MOBILE ROBOTICS · V3</div></div>
     </div>
-    <p id="device" class="device">A conexão não movimenta os motores. Habilite o controle antes de usar.</p>
-    <button id="iphoneHelpButton" type="button" class="help-link" aria-haspopup="dialog">ⓘ Como conectar no iPhone</button>
+    <div class="top-actions">
+      <button class="icon-btn" type="button" id="iphoneHelpButton" aria-label="Ajuda para conectar no iPhone" title="Ajuda para iPhone">?</button>
+      <div class="status-pill" id="status" role="status"><span class="light"></span><span id="statusText">Desconectado</span></div>
+    </div>
+  </header>
+  <section class="hero">
+    <div class="hero-copy">
+      <div class="eyebrow">CONTROLE SEM FIO</div>
+      <h1>Seu robô.<br><em>Seu comando.</em></h1>
+      <p>Assuma o controle da sua garra robótica com movimentos precisos, resposta visual instantânea e Bluetooth BLE.</p>
+      <div class="hero-tags"><span>4 SERVOS</span><span>2 JOYSTICKS</span><span>WEB BLE</span></div>
+    </div>
+    <div class="core-wrap" aria-hidden="true"><div class="core-halo"></div><div class="core-orbit"></div><div class="core-orbit second"></div><div class="core-shape"><svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 5v8M13 13h14l4 9-11 6-11-6 4-9Z"/><path d="m9 21-5 8 5 6 8-9m14-5 5 8-5 6-8-9"/><path d="M17 17h6"/></svg></div></div>
   </section>
-
-  <section class="panel" aria-label="Movimentos">
-    <div class="line-row"><h3><small>02 /</small> Movimentos</h3><span class="caption">Toque e arraste</span></div>
+  <section class="panel connect-panel" aria-label="Conexão Bluetooth">
+    <div class="panel-head"><div><div class="kicker">01 / WIRELESS LINK</div><h2>Conexão Bluetooth</h2></div><span class="connection-flag">BLE UART</span></div>
+    <div class="conn-steps" aria-hidden="true"><span>CELULAR</span><i></i><span>BLUETOOTH</span><i></i><span>MICRO:BIT</span></div>
+    <div class="connect-actions">
+      <button type="button" class="btn primary" id="connect"><span aria-hidden="true">◉</span> Conectar micro:bit</button>
+      <button type="button" class="btn safe" id="enable" disabled><span aria-hidden="true">▶</span> Habilitar controle</button>
+      <button type="button" class="btn secondary" id="disconnect" disabled>Sair</button>
+    </div>
+    <p id="device" class="device">Conecte a micro:bit. Por segurança, os controles começam bloqueados.</p>
+  </section>
+  <section aria-label="Controles da garra">
+    <div class="zone-head"><div><div class="kicker">02 / LIVE CONTROLS</div><h2>Central de movimento</h2><p>Arraste os joysticks. Solte para parar de enviar passos.</p></div><div class="live-badge" id="liveBadge">BLOQUEADO</div></div>
     <div class="pads">
       <div class="pad-panel">
-        <div class="pad-label">Braço</div><p class="pad-detail">P12 ↔ &nbsp; P13 ↕</p>
-        <div id="leftPad" class="pad" role="application" tabindex="0" aria-label="Joystick do braço: horizontal gira a base, vertical move para frente e para trás"><div id="leftNub" class="nub"></div></div>
-        <div class="axis"><span>P12 <strong id="leftX">0</strong></span><span>P13 <strong id="leftY">0</strong></span></div>
+        <div class="pad-card-head"><span class="pad-index">CONTROLE 01</span><span class="pad-type">MOVIMENTO</span></div>
+        <div class="pad-label">Base e braço</div><p class="pad-detail">Esquerda / direita · Frente / trás</p>
+        <div class="pad-wrap"><div class="pad" id="leftPad" role="application" tabindex="0" aria-label="Joystick 1: pino P12 na horizontal, P13 na vertical"><div class="pad-ring"></div><div class="pad-glow"></div><span class="pad-guide up">↑</span><span class="pad-guide down">↓</span><span class="pad-guide left">←</span><span class="pad-guide right">→</span><div class="nub" id="leftNub"></div></div></div>
+        <div class="pad-stats"><div class="pad-stat"><span>↔ P12</span><strong id="leftX">0</strong></div><div class="pad-stat"><span>↕ P13</span><strong id="leftY">0</strong></div></div>
       </div>
-      <div class="pad-panel">
-        <div class="pad-label">Pulso e garra</div><p class="pad-detail">P8 ↔ &nbsp; P14 ↕</p>
-        <div id="rightPad" class="pad mint" role="application" tabindex="0" aria-label="Joystick do pulso e garra: horizontal abre e fecha, vertical move o pulso"><div id="rightNub" class="nub"></div></div>
-        <div class="axis"><span>P8 <strong id="rightX">0</strong></span><span>P14 <strong id="rightY">0</strong></span></div>
+      <div class="pad-panel mint-card">
+        <div class="pad-card-head"><span class="pad-index">CONTROLE 02</span><span class="pad-type">PRECISÃO</span></div>
+        <div class="pad-label">Pulso e garra</div><p class="pad-detail">Abrir / fechar · Movimento do pulso</p>
+        <div class="pad-wrap"><div class="pad mint" id="rightPad" role="application" tabindex="0" aria-label="Joystick 2: pino P8 na horizontal, P14 na vertical"><div class="pad-ring"></div><div class="pad-glow"></div><span class="pad-guide up">↑</span><span class="pad-guide down">↓</span><span class="pad-guide left">←</span><span class="pad-guide right">→</span><div class="nub" id="rightNub"></div></div></div>
+        <div class="pad-stats"><div class="pad-stat"><span>↔ P8</span><strong id="rightX">0</strong></div><div class="pad-stat"><span>↕ P14</span><strong id="rightY">0</strong></div></div>
       </div>
     </div>
-    <div class="grip-buttons">
-      <button type="button" id="openGrip">↔ Abrir garra · P8</button>
-      <button type="button" id="closeGrip">→← Fechar garra · P8</button>
+    <div class="panel" style="padding:16px 19px;margin-top:13px">
+      <div class="grip-section"><div class="grip-label">CONTROLE RÁPIDO DA GARRA · P8</div>
+        <div class="grip-buttons">
+          <button class="grip-key" type="button" id="openGrip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 12H3m0 0 3-3m-3 3 3 3M14 12h7m0 0-3-3m3 3-3 3"/></svg> Abrir garra</button>
+          <button class="grip-key" type="button" id="closeGrip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 12h7m0 0-3-3m3 3-3 3m11-3h-7m0 0 3-3m-3 3 3 3"/></svg> Fechar garra</button>
+        </div>
+      </div>
     </div>
-    <p class="hint">Soltou o joystick? Não são enviados novos passos; o servo mantém o ângulo alcançado.</p>
   </section>
-
-  <section class="panel" aria-label="Velocidade">
-    <h3><small>03 /</small> Precisão de movimento</h3>
-    <div class="controlbar">
-      <div><label for="speed">Passo por comando</label><input id="speed" type="range" min="1" max="3" value="1" step="1"><p class="hint">Comece no nível 1 para evitar forçar as articulações.</p></div>
-      <div id="speedValue" class="speed-number">1°</div>
+  <section class="panel tool-panel" aria-label="Velocidade">
+    <div><div class="kicker">03 / MOTION PROFILE</div><h2>Precisão do movimento</h2>
+      <div class="speed-group" role="group" aria-label="Selecione a velocidade">
+        <button type="button" class="speed-chip selected" data-speed="1" aria-pressed="true"><strong>Preciso</strong><small>1° / passo</small></button>
+        <button type="button" class="speed-chip" data-speed="2" aria-pressed="false"><strong>Normal</strong><small>2° / passo</small></button>
+        <button type="button" class="speed-chip" data-speed="3" aria-pressed="false"><strong>Rápido</strong><small>3° / passo</small></button>
+      </div>
+      <input type="hidden" id="speed" value="1">
     </div>
-    <button id="estop" class="estop" type="button">■ &nbsp;PARAR E BLOQUEAR</button>
+    <div class="speed-info"><div class="speed-ring"><div class="speed-meter"><strong id="speedValue">1°</strong></div><div><strong style="font-size:13px">Controle graduado</strong><p>Comece no modo Preciso para não forçar a mecânica.</p></div></div></div>
   </section>
-  <p class="footer">Parada por software: bloqueia novos comandos, mas não corta a alimentação ou o torque dos servos. Não é um dispositivo de segurança certificado.</p>
+  <button type="button" class="estop active" id="estop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><path d="m12 3 9 16a2 2 0 0 1-1.7 3H4.7A2 2 0 0 1 3 19L12 3Z"/><path d="M12 9v5m0 4h.01"/></svg><span>CONTROLE BLOQUEADO</span></button>
+  <footer class="footer"><span><strong>ROBOTBIT CONTROL V3</strong> · Projetado para micro:bit + Robotbit</span><span>Parada por software: não corta a alimentação dos servos.</span></footer>
 </main>
 
 <div class="help-overlay" id="iphoneHelpOverlay" hidden>
@@ -242,13 +284,17 @@
   function toast(message) { ui.toast.textContent=message; ui.toast.classList.add('visible'); clearTimeout(toastTimeout); toastTimeout=setTimeout(()=>ui.toast.classList.remove('visible'),3300); }
   function render() {
     ui.status.classList.toggle('live',connected);
-    ui.statusText.textContent=connected?(armed?'Ativo':'Conectado'):'Desconectado';
-    ui.connect.disabled=connected; ui.enable.disabled=!connected||armed; ui.disconnect.disabled=!connected;
+    document.body.classList.toggle('is-connected',connected);
+    document.body.classList.toggle('is-armed',armed);
+    ui.statusText.textContent=connected?(armed?'Controle ativo':'Conectado'):'Desconectado';
+    ui.connect.disabled=connected;ui.enable.disabled=!connected||armed;ui.disconnect.disabled=!connected;
     ui.stop.classList.toggle('active',!armed);
-    ui.stop.textContent=armed?'■   PARAR E BLOQUEAR':'■   CONTROLE BLOQUEADO';
-    ui.leftX.textContent=pads.left.x;ui.leftY.textContent=pads.left.y;
-    ui.rightX.textContent=pads.right.x;ui.rightY.textContent=pads.right.y;
+    ui.stop.querySelector('span').textContent=armed?'PARAR E BLOQUEAR':'CONTROLE BLOQUEADO';
+    $('liveBadge').textContent=armed?'MOVIMENTO ATIVO':'BLOQUEADO';
+    ui.leftX.textContent=Math.round(pads.left.x*100)+'%';ui.leftY.textContent=Math.round(pads.left.y*100)+'%';
+    ui.rightX.textContent=Math.round(pads.right.x*100)+'%';ui.rightY.textContent=Math.round(pads.right.y*100)+'%';
     ui.speedValue.textContent=ui.speed.value+'°';
+    document.querySelectorAll('.speed-chip').forEach(el=>{const selected=el.dataset.speed===ui.speed.value;el.classList.toggle('selected',selected);el.setAttribute('aria-pressed',selected?'true':'false');});
     ui.openGrip.classList.toggle('down',gripOverride===-1);
     ui.closeGrip.classList.toggle('down',gripOverride===1);
   }
@@ -256,6 +302,7 @@
     gripOverride=0;
     for (const key of ['left','right']) {
       pads[key].x=0;pads[key].y=0;pads[key].id=null;
+      const pad=$(key+'Pad');pad.classList.remove('held');
       $(key+'Nub').style.transform='translate(-50%,-50%)';
     }
     render();
@@ -342,28 +389,65 @@
   ui.disconnect.addEventListener('click',async()=>{await stop();if(bleDevice?.gatt?.connected)bleDevice.gatt.disconnect();else onDisconnected();});
   ui.stop.addEventListener('click',stop);
   ui.speed.addEventListener('input',()=>{render();if(connected&&armed)write(ui.speed.value);});
+  document.querySelectorAll('.speed-chip').forEach(chip=>chip.addEventListener('click',()=>{
+    const next=chip.dataset.speed;
+    if(!['1','2','3'].includes(next))return;
+    ui.speed.value=next;
+    ui.speed.dispatchEvent(new Event('input',{bubbles:true}));
+    if(navigator.vibrate)navigator.vibrate(8);
+  }));
   // Cada joystick aceita um dedo, permitindo controlar os dois ao mesmo tempo.
-  function bindPad(key) {
-    const pad=$(key+'Pad'), nub=$(key+'Nub'), state=pads[key];
-    function move(ev) {
+  function bindPad(key){
+    const pad=$(key+'Pad'),nub=$(key+'Nub'),state=pads[key];
+    let renderPending=false,targetX=0,targetY=0;
+    function paint(){
+      renderPending=false;
+      nub.style.transform='translate(-50%,-50%) translate('+targetX+'px,'+targetY+'px)';
+    }
+    function move(ev){
       const rect=pad.getBoundingClientRect(),radius=(rect.width/2)-(nub.offsetWidth/2)-5;
-      const x=ev.clientX-(rect.left+rect.width/2),y=ev.clientY-(rect.top+rect.height/2);
-      const distance=Math.hypot(x,y),scale=distance>radius?radius/distance:1;
-      const vx=x*scale,vy=y*scale;
-      let nx=radius?vx/radius:0, ny=radius?-vy/radius:0;
+      const dx=ev.clientX-(rect.left+rect.width/2),dy=ev.clientY-(rect.top+rect.height/2);
+      const distance=Math.hypot(dx,dy),scale=distance>radius?radius/distance:1;
+      targetX=dx*scale;targetY=dy*scale;
+      const nx=radius?targetX/radius:0,ny=radius?-targetY/radius:0;
       state.x=Math.abs(nx)<.24?0:Math.round(nx*100)/100;
       state.y=Math.abs(ny)<.24?0:Math.round(ny*100)/100;
-      nub.style.transform=`translate(-50%,-50%) translate(${vx}px,${vy}px)`;
+      if(!renderPending){renderPending=true;requestAnimationFrame(paint);}
+      render();
+    }
+    function release(ev){
+      if(ev && ev.pointerId!==state.id)return;
+      state.id=null;state.x=0;state.y=0;targetX=0;targetY=0;
+      pad.classList.remove('held');
+      // Após soltar, o CSS devolve o joystick ao centro com efeito mola.
+      if(!renderPending)nub.style.transform='translate(-50%,-50%)';
+      else requestAnimationFrame(()=>{if(state.id===null)nub.style.transform='translate(-50%,-50%)';});
       render();
     }
     pad.addEventListener('pointerdown',ev=>{
       if(!armed||state.id!==null)return;
-      ev.preventDefault();state.id=ev.pointerId;pad.setPointerCapture(ev.pointerId);move(ev);
+      ev.preventDefault();state.id=ev.pointerId;
+      pad.classList.add('held');
+      try{pad.setPointerCapture(ev.pointerId);}catch(e){}
+      move(ev);
+      if(navigator.vibrate)navigator.vibrate(9);
     });
     pad.addEventListener('pointermove',ev=>{if(ev.pointerId===state.id){ev.preventDefault();move(ev);}});
-    function release(ev){if(ev.pointerId!==state.id)return;state.id=null;state.x=0;state.y=0;nub.style.transform='translate(-50%,-50%)';render();}
-    pad.addEventListener('pointerup',release);pad.addEventListener('pointercancel',release);
-    pad.addEventListener('lostpointercapture',()=>{if(state.id!==null){state.id=null;state.x=0;state.y=0;nub.style.transform='translate(-50%,-50%)';render();}});
+    pad.addEventListener('pointerup',release);
+    pad.addEventListener('pointercancel',release);
+    pad.addEventListener('lostpointercapture',()=>{if(state.id!==null)release();});
+    // Acessibilidade: setas movem os eixos quando o pad está focado.
+    pad.addEventListener('keydown',ev=>{
+      if(!armed||!['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(ev.key))return;
+      ev.preventDefault();
+      if(ev.key==='ArrowLeft')state.x=-1;
+      if(ev.key==='ArrowRight')state.x=1;
+      if(ev.key==='ArrowUp')state.y=1;
+      if(ev.key==='ArrowDown')state.y=-1;
+      pad.classList.add('held');render();
+    });
+    pad.addEventListener('keyup',ev=>{if(ev.key.startsWith('Arrow'))release();});
+    pad.addEventListener('blur',()=>{if(state.id===null)release();});
   }
   bindPad('left');bindPad('right');
   function bindGrip(id,dir) {
