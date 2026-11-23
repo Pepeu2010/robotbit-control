@@ -197,7 +197,7 @@
       const i=Number(node.dataset.step);
       node.textContent=String(state.virtual[i]||0);
     });
-    for(let i=0;i<4;i++){const input=$('studioAxis'+i);if(input&&document.activeElement!==input)input.value=String(state.virtual[i]||0);}
+    for(let i=0;i<4;i++){const input=$('studioAxis'+i);if(input&&document.activeElement!==input)input.value=String(state.virtual[i]||0);const output=$('studioAxisOut'+i);if(output)output.textContent=String(state.virtual[i]||0);}
   }
   function markup(which){
     if(which==='studio')return studioMarkup();
@@ -254,7 +254,7 @@
     '<div class="studio-grid"><div class="studio-card"><h3>Desafios</h3><p>Escolha um desafio. Nada será enviado por Bluetooth.</p>'+
     '<div class="studio-stack" id="missionCards" style="margin-top:12px">'+quests.map((q,i)=>{
       const best=Number(state.best[i]);
-      return '<div class="studio-mission-card" data-done="'+Number.isFinite(best&&best)?'true':'false'+'">'+
+      return '<div class="studio-mission-card" data-done="'+(best>0?'true':'false')+'">'+
         '<div class="studio-row between"><div><strong>'+(i+1)+'. '+q.name+'</strong><small style="display:block;margin-top:4px">'+q.description+'</small></div>'+
         '<span class="studio-tag">'+(best?'RECORDE '+best+'s':'INÉDITA')+'</span></div>'+
         button('Iniciar desafio','mission-start-'+i,'sm')+'</div>';
